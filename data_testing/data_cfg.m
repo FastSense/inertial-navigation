@@ -7,5 +7,5 @@ cfg.delim       = ',';
 cfg.headerlines = 1;
 
 % output settings
-cfg.output_file = 'Datalog_16bit_500Hz_no_mov.txt'
+cfg.output_file = 'Datalog_16bit_500Hz_no_mov.txt';
 cfg.save_data   = true;
