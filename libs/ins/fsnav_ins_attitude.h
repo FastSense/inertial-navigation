@@ -1,4 +1,4 @@
-// Oct-2020
+// Nov-2020
 /*	fsnav_ins_attitude
 	
 	fsnav plugins for ins angular rate integration:

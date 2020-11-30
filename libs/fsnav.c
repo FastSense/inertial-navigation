@@ -1,4 +1,4 @@
-// Oct-2020
+// Nov-2020
 // FSNAV core source code
 
 #include <stdlib.h>
@@ -314,14 +314,18 @@ char fsnav_init_imu(fsnav_imu* imu)
 	size_t i;
 
 	// validity flags
-	imu->w_valid = 0;
-	imu->f_valid = 0;
-	imu->W_valid = 0;
+	imu-> w_valid = 0;
+	imu-> f_valid = 0;
+	imu->Tw_valid = 0;
+	imu->Tf_valid = 0;
+	imu-> W_valid = 0;
 	imu->t = 0;
 	for (i = 0; i < 3; i++) {
-		imu->w[i] = 0;
-		imu->f[i] = 0;
-		imu->W[i] = 0;
+		imu->w [i] = 0; // gyroscopes
+		imu->f [i] = 0; // accelerometers
+		imu->Tw[i] = 0; // gyroscope temperature
+		imu->Tf[i] = 0; // accelerometer temperature
+		imu->W [i] = 0; // angular velocity of the local level reference frame
 	}
 	// default gravity acceleration vector
 	imu->g[0] = 0;
@@ -955,7 +959,9 @@ void fsnav_free_gnss(fsnav_gnss* gnss)
 	/*
 		initialize air data structure
 		input:
-			fsnav_air* air --- air data structure
+			fsnav_air* air --- pointer to an air data structure
+		return value:
+			1
 	*/
 char fsnav_init_air(fsnav_air* air)
 {
@@ -998,6 +1004,57 @@ void fsnav_free_air(void)
 
 
 
+// reference data handling subroutines
+	/*
+		initialize reference data structure
+		input:
+			fsnav_ref* ref --- pointer to a reference data structure
+		return value:
+			1 if successful
+			0 otherwise
+	*/
+char fsnav_init_ref(fsnav_ref* ref)
+{
+	size_t i;
+
+	// variables
+	ref->t = 0;
+	ref->g_valid = 0;
+	// default gravity acceleration vector
+	ref->g[0] = 0;
+	ref->g[1] = 0;
+	ref->g[2] = -fsnav->imu_const.ge*(1 + fsnav->imu_const.fg/2); // middle value
+	// drop the solution
+	if (!fsnav_init_sol(&(ref->sol), ref->cfg, ref->cfglength))
+		return 0;
+
+	return 1;
+}
+
+	/*
+		free reference data memory
+	*/
+void fsnav_free_ref(void)
+{
+	if (fsnav->ref == NULL)
+		return;
+
+	// configuration
+	fsnav->ref->cfg = NULL;
+	fsnav->ref->cfglength = 0;
+
+	// solution
+	fsnav_free_sol(&(fsnav->ref->sol));
+	
+	// fsnav_ref structure
+	free((void*)(fsnav->ref));
+	fsnav->ref = NULL;
+}
+
+
+
+
+
 // general handling routines
 	/*
 		free all alocated memory and set pointers and counters to NULL
@@ -1030,6 +1087,9 @@ void fsnav_free()
 
 	// air data
 	fsnav_free_air();
+
+	// reference data
+	fsnav_free_ref();
 
 	// solution
 	fsnav_free_sol(&(fsnav->sol));
@@ -1196,6 +1256,27 @@ char fsnav_init(char* cfg)
 
 		// try to init
 		if (!fsnav_init_air(fsnav->air)) {
+			fsnav_free();
+			return 0;
+		}
+	}
+
+	// reference data init
+	fsnav->ref = NULL;
+	if (fsnav_locatecfggroup("ref:", fsnav->cfg, fsnav->cfglength, &cfgptr, &grouplen)) { // if the group found in configuration
+		// try lo allocate memory
+		fsnav->ref = (fsnav_ref*)calloc(1, sizeof(fsnav_ref));
+		if (fsnav->ref == NULL) {
+			fsnav_free();
+			return 0;
+		}
+
+		// set configuration pointer
+		fsnav->ref->cfg = cfgptr;
+		fsnav->ref->cfglength = grouplen;
+
+		// try to init
+		if(!fsnav_init_ref(fsnav->ref)) {
 			fsnav_free();
 			return 0;
 		}
@@ -1489,7 +1570,7 @@ char fsnav_resume_plugin(void(*plugin)(void))
 	*/
 char* fsnav_locate_token(const char* token, char* src, const size_t len, const char delim)
 {
-	const char quote = '"', brace_open = '{', brace_close = '}';
+	const char quote = '"', brace_open = '{', brace_close = '}', blank = ' ';
 
 	size_t i, j, k, n, len1;
 
@@ -1515,10 +1596,10 @@ char* fsnav_locate_token(const char* token, char* src, const size_t len, const c
 		return NULL;
 
 	if (!delim)
-		return (src + k + 1);
+		return (src + k);
 
 	// check for delimiter
-	for (i = k+1; i < len && src[i] && src[i] <= ' '; i++); // skip all non-printables		
+	for (i = k; i < len && src[i] && src[i] <= blank; i++); // skip all non-printables		
 	if (i >= len || src[i] != delim) // no delimiter found
 		return NULL;
 	else

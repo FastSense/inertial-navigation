@@ -1,4 +1,4 @@
-// Oct-2020
+// Nov-2020
 // FSNAV core header file
 
 #ifndef FSNAV_H_
@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 // FSNAV core declarations
-#define FSNAV_BUS_VERSION 9 // current bus version
+#define FSNAV_BUS_VERSION 11 // current bus version
 
 
 
@@ -29,31 +29,31 @@ typedef struct {
 
 // navigation solution structure
 typedef struct {
-	double  x[3];         // cartesian coordinates, meters
-	char    x_valid;      // validity flag (0/1), or a number of valid measurements used
-	double  x_std;        // coordinate RMS ("standard") deviation estimate, meters
-
-	double  llh[3];       // geodetic coordinates: longitude (rad), latitude (rad), height (meters)
-	char    llh_valid;    // validity flag (0/1), or a number of valid measurements used
-
-	double  v[3];         // relative-to-Earth velocity vector coordinates in local-level geodetic cartesian frame, meters per second
-	char    v_valid;      // validity flag (0/1), or a number of valid measurements used
-	double  v_std;        // velocity RMS ("standard") deviation estimate, meters per second
-
-	double  q[4];         // attitude quaternion, relative to local-level geodetic cartesian frame
-	char    q_valid;      // validity flag (0/1), or a number of valid measurements used
-
-	double  L[9];         // attitude matrix for the transition from local-level geodetic cartesian frame, row-wise: L[0] = L_11, L[1] = L_12, ..., L[8] = L[33]
-	char    L_valid;      // validity flag (0/1), or a number of valid measurements used
-
-	double  rpy[3];       // attitude angles relative to local-level geodetic cartesian frame: roll (rad), pitch (rad), yaw (rad)
-	char    rpy_valid;    // validity flag (0/1), or a number of valid measurements used
-
-	double  dt;           // clock bias
-	char    dt_valid;     // validity flag (0/1), or a number of valid measurements used
-
-	double* metrics;      // application-specific solution metrics
-	size_t metrics_count; // number of application-specific metrics, given in cfg ("metrics_count = ..."), 2 by default, 255 max
+	double  x[3];          // cartesian coordinates, meters
+	char    x_valid;       // validity flag (0/1), or a number of valid measurements used
+	double  x_std;         // coordinate RMS ("standard") deviation estimate, meters
+						   
+	double  llh[3];        // geodetic coordinates: longitude (rad), latitude (rad), height (meters)
+	char    llh_valid;     // validity flag (0/1), or a number of valid measurements used
+						   
+	double  v[3];          // relative-to-Earth velocity vector coordinates in local-level geodetic cartesian frame, meters per second
+	char    v_valid;       // validity flag (0/1), or a number of valid measurements used
+	double  v_std;         // velocity RMS ("standard") deviation estimate, meters per second
+						   
+	double  q[4];          // attitude quaternion, relative to local-level geodetic cartesian frame
+	char    q_valid;       // validity flag (0/1), or a number of valid measurements used
+						   
+	double  L[9];          // attitude matrix for the transition from local-level geodetic cartesian frame, row-wise: L[0] = L_11, L[1] = L_12, ..., L[8] = L[33]
+	char    L_valid;       // validity flag (0/1), or a number of valid measurements used
+						   
+	double  rpy[3];        // attitude angles relative to local-level geodetic cartesian frame: roll (rad), pitch (rad), yaw (rad)
+	char    rpy_valid;     // validity flag (0/1), or a number of valid measurements used
+						   
+	double  dt;            // clock bias
+	char    dt_valid;      // validity flag (0/1), or a number of valid measurements used
+						   
+	double* metrics;       // application-specific solution metrics
+	size_t  metrics_count; // number of application-specific metrics, given in cfg ("metrics_count = ..."), 2 by default, 255 max
 } fsnav_sol;
 
 
@@ -79,13 +79,19 @@ typedef struct {
 	char*  cfg;       // pointer to IMU configuration substring
 	size_t cfglength; // IMU configuration substring length
 
-	double t;         // measurement update time
+	double t;         // measurement update time (as per IMU clock), used to calculate time step when needed
 
 	double w[3];      // up to 3 gyroscope measurements
 	char   w_valid;   // validity flag (0/1), or a number of valid components
 
 	double f[3];      // up to 3 accelerometer measurements
 	char   f_valid;   // validity flag (0/1), or a number of valid components
+
+	double Tw[3];      // temperature of gyroscopes 
+	char   Tw_valid;   // validity flag (0/1), or a number of valid components
+
+	double Tf[3];      // temperature of accelerometers
+	char   Tf_valid;   // validity flag (0/1), or a number of valid components
 
 	double W[3];      // angular velocity of the local level reference frame
 	char   W_valid;   // validity flag (0/1), or a number of valid components
@@ -315,7 +321,7 @@ typedef struct {
 	char*  cfg;         // pointer to air data configuration substring
 	size_t cfglength;   // air data configuration substring length
 
-	double t;           // measurement update time
+	double t;           // measurement update time (as per air data computer clock)
 
 	double alt;         // barometric altitude
 	double alt_std;     // estimated standard deviation, <0 if undefined
@@ -329,6 +335,23 @@ typedef struct {
 	double speed_std;   // estimated standard deviation, <0 if undefined
 	char   speed_valid; // validity flag (0/1)
 } fsnav_air;
+
+
+
+
+
+// reference data
+typedef struct {
+	char*  cfg;       // pointer to reference data configuration substring
+	size_t cfglength; // reference data configuration substring length
+
+	double t;         // reference time
+
+	double g[3];      // reference gravity acceleration vector
+	char   g_valid;   // validity flag (0/1), or a number of valid components
+
+	fsnav_sol sol;     // reference data
+} fsnav_ref;
 
 
 
@@ -388,10 +411,11 @@ typedef struct {
 	size_t          gnss_count;      // number of gnss instances
 
 	fsnav_air*       air;             // air data subsystem pointer
+	fsnav_ref*       ref;             // reference data subsystem pointer
 
-	double          t;               // system time
+	double          t;               // system time (as per main clock for integrated systems)
 	int             mode;            // operation mode: 0 - init, <0 termination, >0 normal operation
-	fsnav_sol        sol;             // navigation solution
+	fsnav_sol        sol;             // navigation solution (hybrid/integrated, etc.)
 } fsnav_struct;
 
 extern fsnav_struct* fsnav;

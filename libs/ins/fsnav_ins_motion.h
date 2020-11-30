@@ -1,4 +1,4 @@
-// Oct-2020
+// Nov-2020
 /*	fsnav_ins_motion
 	
 	fsnav plugins for ins position and velocity algorithms
