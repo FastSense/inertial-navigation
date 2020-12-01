@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="ru-ru">
+<head>
+	<meta content="text/html; charset=UTF-8" http-equiv="content-type">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>FSNAV software core architecture</title>
+
+	<style>
+		body {
+			font-family: sans-serif; 
+			font-size: 10pt;
+			
+			width: 90%;
+			max-width: 768px;
+			
+			margin-left: auto;
+			margin-right: auto;
+			margin-bottom: 20px;
+		}
+		
+		p {
+			display: block;
+			
+			margin-top: 10px;
+			margin-bottom: 10px;
+			margin-left: 0;
+			margin-right: 0;
+			
+			text-indent: 0px;
+		}
+		
+		h1 {
+			font-size: 22pt;
+			font-weight: bold;
+			color: #226390;
+			
+			margin-top: 60px;
+			margin-bottom: 0px;
+			
+			text-align: center;
+		}
+		
+		h2 {
+			font-size: 17pt;
+			font-weight: bold;
+			color: #226390;
+			
+			margin-top: 60px;
+			margin-bottom: 0px;
+		}
+		
+		h3 {
+			font-size: 12pt;
+			font-weight: bold;
+			color: #226390;
+			
+			margin-top: 60px;
+			margin-bottom: 0px;
+		}
+		
+		h4 {
+			font-size: 10pt;
+			font-weight: bold;
+			
+			margin-top: 10px;
+			margin-bottom: 0px;
+		}
+		
+		hr {
+			margin-top: 60px;
+			margin-bottom: 0px;
+			border-width: 1px;
+		}
+		
+		ol {
+			padding: 0;
+			margin-left: 2em;
+		}
+		
+		ul {
+			padding: 0;
+			margin-left: 2em;
+		}
+		
+		li {
+			margin: 0.5em 0;
+		}
+		
+		#toc_container {
+			margin-top: 2em;
+		}
+	
+		code {
+			font-family: Consolas, monaco, monospace;
+			background-color: #fafafa;
+
+			white-space: nowrap;
+		}
+    
+		code.badcode {
+			background-color: #ffe6d8;
+		}
+		
+		code.long {
+			white-space: normal;
+			word-break: break-all;
+		}
+
+		pre.code {
+			font-family: Consolas, monaco, monospace;
+			background-color: #fafafa;
+			
+			padding: 6px 10px;
+			border: 1px solid #bbb;
+			overflow: auto;
+			
+			tab-size: 4;
+		}
+
+		pre.badcode {
+			font-family: Consolas, monaco, monospace;
+			background-color: #ffe6d8;
+			
+			padding: 6px 10px;
+			border: 1px solid #bbb;
+			overflow: auto;
+			
+			tab-size: 4;
+		}
+		
+		span.formula {
+			font-family: Consolas, monaco, monospace;
+		}
+		
+		div.formula {
+			font-family: Consolas, monaco, monospace;
+			
+			margin-top: 1em;
+			text-align: center;
+		}
+		
+		div.container {
+			text-align: center;
+			overflow: auto;
+		}
+
+		div.container pre {
+			display: inline-block;
+			text-align: left;
+		}
+		
+		pre.schema {
+			font-family: Consolas, monaco, monospace;
+			background-color: #ffffff;
+			
+			padding: 0px 0px;
+			border: 0px;
+			
+			tab-size: 4;
+		}
+		
+		table.default {
+			margin-left:auto; 
+			margin-right:auto;
+			
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		
+		table.default th {
+			text-align: left; 
+			vertical-align: top;
+			
+			border: 1px solid black;
+			border-collapse: collapse; 
+			padding: 1em;
+		}
+		
+		table.default td {
+			text-align: left; 
+			vertical-align: top;
+			
+			border: 1px solid black;
+			border-collapse: collapse; 
+			padding: 1em;
+		}
+		
+		table.matrix {
+			font-family: Consolas, monaco, monospace;
+		
+			margin-left:auto; 
+			margin-right:auto;
+			
+			position: relative;
+		}
+		
+		.matrix:before, .matrix:after {
+			content: "";
+			position: absolute;
+			top: 0px;
+			border: 1px solid #000;
+			width: 5px;
+			height: 97%;
+		}
+		
+		.matrix:before {
+			left: 0px;
+			border-right: 0px;
+		}
+		
+		.matrix:after {
+			right: 0px;
+			border-left: 0px;
+		}
+		
+		.matrix td {
+			padding: 5px;    
+			text-align: center;
+		}
+	</style>
+</head>
+
+<body>
+<h1>Архитектура ПО БИНС</h1>
+<p style="font-weight: bold; text-align: center;">01-12-2020</p>
+
+
+
+
+
+<div id="toc_container">
+<ul class="toc_list">
+	<li><a href="#overview">Обзор</a></li>
+  
+	<li><a href="#fsnav_bus">Шина данных</a>
+	<ul>
+		<li><a href="#bus_descr">Описание</a></li>
+		<li><a href="#fsnav_imu">Инерциальные данные</a></li>
+		<li><a href="#fsnav_gnss">Спутниковые данные</a></li>
+		<li><a href="#fsnav_air">Система воздушных сигналов</a></li>
+		<li><a href="#fsnav_ref">Данные идеальной траектории</a></li>
+		<li><a href="#fsnav_sol">Навигационное решение</a></li>
+		<li><a href="#fsnav_epoch">Спутниковая эпоха</a></li>
+		<li><a href="#fsnav_gnss_gps">Данные созвездия GPS</a></li>
+		<li><a href="#fsnav_gnss_glo">Данные созвездия ГЛОНАСС</a></li>
+		<li><a href="#fsnav_gnss_gal">Данные созвездия Galileo</a></li>
+		<li><a href="#fsnav_gnss_bds">Данные созвездия BeiDou</a></li>
+		<li><a href="#fsnav_gnss_sat">Данные навигационного спутника</a></li>
+		<li><a href="#fsnav_gnss_settings">Настройки спутникового навигационного приёмника</a></li>
+		<li><a href="#fsnav_imu_const">Константы инерциальной навигации</a></li>
+		<li><a href="#fsnav_gnss_const">Константы спутниковой навигации</a></li>
+		<li><a href="#fsnav_gps_const">Константы GPS</a></li>
+		<li><a href="#fsnav_glo_const">Константы ГЛОНАСС</a></li>
+		<li><a href="#fsnav_gal_const">Константы Galileo</a></li>
+		<li><a href="#fsnav_bds_const">Константы BeiDou</a></li>
+	</ul>
+	</li>
+	
+	<li><a href="#fsnav_core_fun">Основные функции ядра</a>
+	<ul>
+		<li><a href="#fsnav_core_fun_descr">Описание</a></li>
+		<li><a href="#fsnav_add_plugin"><code class="long">fsnav->add_plugin</code></a></li>
+		<li><a href="#fsnav_init"><code class="long">fsnav->init</code></a></li>
+		<li><a href="#fsnav_step"><code class="long">fsnav->step</code></a></li>
+		<li><a href="#fsnav_terminate"><code class="long">fsnav->terminate</code></a></li>
+		<li><a href="#fsnav_remove_plugin"><code class="long">fsnav->remove_plugin</code></a></li>
+		<li><a href="#fsnav_replace_plugin"><code class="long">fsnav->replace_plugin</code></a></li>
+		<li><a href="#fsnav_schedule_plugin"><code class="long">fsnav->schedule_plugin</code></a></li>
+		<li><a href="#fsnav_reschedule_plugin"><code class="long">fsnav->reschedule_plugin</code></a></li>
+		<li><a href="#fsnav_suspend_plugin"><code class="long">fsnav->suspend_plugin</code></a></li>
+		<li><a href="#fsnav_resume_plugin"><code class="long">fsnav->resume_plugin</code></a></li>
+	</ul>
+	</li>
+	
+	<li><a href="#fsnav_cfg">Строка конфигурации</a>
+	<ul>
+		<li><a href="#fsnav_cfg_descr">Описание</a></li>
+		<li><a href="#fsnav_group">Группы и подгруппы</a></li>
+		<li><a href="#fsnav_parameters">Параметры</a></li>
+		<li><a href="#fsnav_cfg_example">Пример строки конфигурации</a></li>
+	</ul>
+	</li>
+	
+	<li><a href="#fsnav_plugins">Частные алгоритмы</a>
+	<ul>
+		<li><a href="#fsnav_plugins_descr">Описание</a></li>
+		<li><a href="#fsnav_plugin_rules">Правила разработки частных алгоритмов</a></li>
+		<li><a href="#fsnav_plugin_template">Шаблон функции частного алгоритма</a></li>
+		<li><a href="#fsnav_plugin_example">Пример функции частного алгоритма</a></li>
+	</ul>
+	</li>
+	
+	<li><a href="#fsnav_linal">Функции линейной алгебры</a>
+	<ul>
+		<li><a href="#fsnav_linal_descr">Описание</a></li>
+		<li><a href="#fsnav_linal_dot"><code class="long">fsnav_linal_dot</code></a></li>
+		<li><a href="#fsnav_linal_vnorm"><code class="long">fsnav_linal_vnorm</code></a></li>
+		<li><a href="#fsnav_linal_cross3x1"><code class="long">fsnav_linal_cross3x1</code></a></li>
+		<li><a href="#fsnav_linal_mmul"><code class="long">fsnav_linal_mmul</code></a></li>
+		<li><a href="#fsnav_linal_mmul1T"><code class="long">fsnav_linal_mmul1T</code></a></li>
+		<li><a href="#fsnav_linal_mmul2T"><code class="long">fsnav_linal_mmul2T</code></a></li>
+		<li><a href="#fsnav_linal_qmul"><code class="long">fsnav_linal_qmul</code></a></li>
+		<li><a href="#fsnav_linal_mat2quat"><code class="long">fsnav_linal_mat2quat</code></a></li>
+		<li><a href="#fsnav_linal_quat2mat"><code class="long">fsnav_linal_quat2mat</code></a></li>
+		<li><a href="#fsnav_linal_rpy2mat"><code class="long">fsnav_linal_rpy2mat</code></a></li>
+		<li><a href="#fsnav_linal_mat2rpy"><code class="long">fsnav_linal_mat2rpy</code></a></li>
+		<li><a href="#fsnav_linal_eul2mat"><code class="long">fsnav_linal_eul2mat</code></a></li>
+		<li><a href="#fsnav_linal_u_ij2k"><code class="long">fsnav_linal_u_ij2k</code></a></li>
+		<li><a href="#fsnav_linal_u_k2ij"><code class="long">fsnav_linal_u_k2ij</code></a></li>
+		<li><a href="#fsnav_linal_u_mul"><code class="long">fsnav_linal_u_mul</code></a></li>
+		<li><a href="#fsnav_linal_uT_mul_v"><code class="long">fsnav_linal_uT_mul_v</code></a></li>
+		<li><a href="#fsnav_linal_u_inv"><code class="long">fsnav_linal_u_inv</code></a></li>
+		<li><a href="#fsnav_linal_uuT"><code class="long">fsnav_linal_uuT</code></a></li>
+		<li><a href="#fsnav_linal_chol"><code class="long">fsnav_linal_chol</code></a></li>
+		<li><a href="#fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update</code></a></li>
+		<li><a href="#fsnav_linal_check_measurement_residual"><code class="long">fsnav_linal_check_measurement_residual</code></a></li>
+	</ul>
+	</li>
+	
+</ul>
+</div>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="overview">Обзор</h2>
+
+<p>ПО БИНС состоит из:</p>
+
+<ul>
+	<li><a href="#fsnav_bus">шины данных</a>;</li>
+	<li><a href="#fsnav_core_fun">основных функций ядра</a>;</li>
+	<li><a href="#fsnav_cfg">строки конфигурации</a>;</li>
+	<li><a href="#fsnav_plugins">частных алгоритмов</a>;</li>
+	<li><a href="#fsnav_linal">функций линейной алгебры</a>;</li>
+	<li>сервисных функций.</li>
+</ul>
+
+<p><a href="#fsnav_core_fun">Основные функции ядра</a> используются для
+определения последовательности запуска <a href="#fsnav_plugins">частных алгоритмов</a>, инициализации <a href="#fsnav_bus">шины
+данных</a> в соответствии со <a href="#fsnav_cfg">строкой конфигурации</a>, и управления основным циклом, 
+состоящим из <a href="#fsnav_plugins">частных алгоритмов</a>.</p>
+
+<p>Каждый <a href="#fsnav_plugins">частный алгоритм</a> имеет минимум три режима работы: инициализация (при первом
+проходе), завершение работы, и штатное выполнение. Режим работы <a href="#fsnav_plugins">частных
+алгоритмов</a> определяется переменной <code>mode</code> на <a href="#fsnav_bus">шине данных</a>:</p>
+
+<ul>
+	<li><code>mode == 0</code> — инициализация;</li>
+	<li><code>mode &lt; 0</code> — завершение работы (значение может определять причину завершения);</li>
+	<li><code>mode > 0</code> — штатное выполнение (значение может определять различные режимы работы).</li>
+</ul>
+
+<p>Для разработки <a href="#fsnav_plugins">частных алгоритмов</a> имеются <a href="#fsnav_plugin_rules">правила</a> и <a href="#fsnav_plugin_template">шаблон</a>.</p>
+
+<p>Указатель на <a href="#fsnav_bus">шину данных</a> расположен в глобальной
+переменной <code>fsnav</code>, определённой в заголовочном файле <code>fsnav.h</code>, подключаемом к
+проекту вместе с исходных кодом ядра ПО <code>fsnav.c</code>, разработанным в
+соответствии со стандартом ANSI C89. Ядро использует только стандартные
+библиотеки языка C: <code>stddef.h</code>, <code>stdlib.h</code>,
+<code>math.h</code>, включая арифметику с плавающей точкой. Типичный
+пример использования:</p>
+
+<pre class="code">
+#include "fsnav.h"
+
+int main(void)
+{
+	const char cfg[] = "<a href="#fsnav_cfg">...</a>";     // <a href="#fsnav_cfg">строка конфигурации</a>
+	
+	if (   !<a href="#fsnav_add_plugin">fsnav->add_plugin</a>(...) // добавление <a href="#fsnav_plugins">частных алгоритмов</a> в основной цикл
+	    || !<a href="#fsnav_add_plugin">fsnav->add_plugin</a>(...)
+	    ...
+	   )
+		return -1;                // ошибка добавления
+		
+	if (<a href="#fsnav_init">fsnav->init</a>(<a href="#fsnav_cfg">cfg</a>))          // инициализация
+		while (<a href="#fsnav_step">fsnav->step</a>());     // основной цикл
+	else
+		return -2;                // ошибка инициализации
+}
+</pre>
+
+<p>Структура архитектуры ПО БИНС приведена на диаграмме ниже.</p>
+
+<div class="container">
+<pre class="schema">
+Ядро fsnav                                                      Частные алгоритмы (основной цикл)
++-------------------------------------------+                  +----------------->        
+|                                           |                  | +------------------------------+
+|                                           |                  | | wait_step_sync               | |
+| Основные функции                          |                  | | // ожидание метки времени    | |
+| +---------------------------------------+ |                  | +------------------------------+ |
+| | add_plugin  // добавление алг. в цикл | |                  | +------------------------------+ |
+| | init        // инициализация          | |                  | | get_sensors                  | |
+| | step        // шаг основного цикла    | |    Управление    | | // чтение показаний датчиков | |
+| | terminate   // завершение работы      | | ---------------> | +------------------------------+ |
+| |                                       | |  основным циклом | +------------------------------+ |
+| | + доп. функции диспетчеризации        | |                  | | gravity                      | |
+| | + функции линейной алгебры            | |                  | | // модельная сила тяжести    | |
+| | + сервисные функции                   | |                  | +------------------------------+ |
+| +---------------------------------------+ |                  | +------------------------------+ |
+|                                           |                  | | alignment                    | |
+|                                           |                  | | // начальная выставка        | |
+|                                           |                  | +------------------------------+ |
+|                                           |                  | +------------------------------+ |
+| Шина данных                               |                  | | attitude                     | |
+| +---------------------------------------+ |                  | | // задача ориентации         | |
+| | cfg         // строка конфигурации    | |                  | +------------------------------+ |
+| | imu_const   // константы инерц. нав.  | |                  | +------------------------------+ |
+| | imu         // инерциальные данные    | |                  | | pos_and_vel                  | |
+| | gnss_const  // константы спутн. нав.  | |    Управление    | | // скорость и координаты     | |
+| | gnss        // спутниковые данные     | | <--------------- | +------------------------------+ |
+| | air         // данные СВС             | |   данными шины   |                                  |
+| | t           // текущее время          | |                  |              .......             |
+| | mode        // режим работы           | |                  |                                  |
+| | sol         // гибридное решение      | |                  | +------------------------------+ |
+| +---------------------------------------+ |                  | | send_solution                | |
+|                                           |                  | | // выдача решения            | |
+|                                           |                    +------------------------------+ |
++-------------------------------------------+                                   <-----------------+
+</pre>
+</div>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="fsnav_bus">Шина данных</h2>
+
+<h3 id="bus_descr">Описание</h3>
+
+
+<p>Шина данных находится по глобальному указателю <code>fsnav</code>, определенному в заголовочном
+файле <code>fsnav.h</code>, служит для обмена информацией между <a href="#fsnav_plugins">частными алгоритмами</a>,
+и имеет приведённую ниже структуру.</p>
+
+<pre class="code">
+typedef struct {
+	int     ver;             // номер версии шины для использования в реальном времени
+							 
+	...     ...              // указатели на <a href="#fsnav_core_fun">основные функции ядра</a>
+	struct  core;            // служебные переменные
+							 
+	char*   cfg;             // полная <a href="#fsnav_cfg">строка конфигурации</a>
+	size_t  cfglength;       // длина строки конфигурации
+							 
+	char*   cfg_settings;    // указатель на подстроку <a href="#fsnav_cfg">конфигурации</a>, общую для всех подсистем
+	size_t  settings_length; // длина подстроки конфигурации, общей для всех подсистем
+							 
+	struct  imu_const;       // <a href="#fsnav_imu_const">константы инерциальной навигации</a>
+	struct* imu;             // указатель на <a href="#fsnav_imu">инерциальные данные</a>
+							 
+	struct  gnss_const;      // <a href="#fsnav_gnss_const">константы спутниковой навигации</a>
+	struct* gnss;            // массив наборов <a href="#fsnav_gnss">спутниковых данных</a> (поддерживается до 10 приёмников)
+	size_t  gnss_count;      // количество спутниковых приемников
+							 
+	fsnav_air* air;           // указатель на данные <a href="#fsnav_air">системы воздушных сигналов</a>
+							 
+	double  t;               // системное время
+	int     mode;            // режим работы
+	struct  sol;             // гибридное <a href="#fsnav_sol">навигационное решение</a>
+} fsnav_struct;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_imu">Инерциальные данные</h3>
+
+<pre class="code">
+typedef struct {
+	char*  cfg;       // указатель на подстроку <a href="#fsnav_cfg">конфигурации</a> с параметрами инерциальной подсистемы
+	size_t cfglength; // длина подстроки конфигурации с параметрами инерциальной подсистемы
+					  
+	double t;         // время последнего обновления инерциальных измерений
+					  
+	double w[3];      // 3 измерения гироскопов
+	char   w_valid;   // признак достоверности измерений гироскопов
+					  
+	double f[3];      // 3 измерения акселерометров
+	char   f_valid;   // признак достоверности измерений акселерометров
+	
+	double Tw[3];      // 3 температуры гироскопов 
+	char   Tw_valid;   // признак достоверности температуры гироскопов
+
+	double Tf[3];      // 3 температуры акселерометров
+	char   Tf_valid;   // признак достоверности температуры акселерометров
+					  
+	double W[3];      // угловая скорость опорного трёхгранника
+	char   W_valid;   // признак достоверности угловой скорости опорного трёхгранника
+					  
+	double g[3];      // вектор местной удельной силы тяжести
+	char   g_valid;   // признак достоверности вектора местной удельной силы тяжести
+					  
+	struct sol;       // инерциальное <a href="#fsnav_sol">навигационное решение</a>
+} fsnav_imu;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss">Спутниковые данные</h3>
+
+<pre class="code">
+typedef struct {
+	char*   cfg;             // указатель на подстроку <a href="#fsnav_cfg">конфигурации</a> с параметрами спутниковой подсистемы
+	size_t  cfglength;       // длина подстроки конфигурации с параметрами спутниковой подсистемы
+							 
+	char*   cfg_settings;    // указатель на подстроку <a href="#fsnav_cfg">конфигурации</a> с параметрами, общими для всех созвездий спутниковой подсистемы
+	size_t  settings_length; // длина подстроки конфигурации с параметрами, общими для всех созвездий спутниковой подсистемы
+							 
+	struct  settings;        // параметры, общие для всех созвездий
+							 
+	struct* gps;             // указатель на <a href="#fsnav_gnss_gps">данные созвездия GPS</a>
+                                             
+	struct* glo;             // указатель на <a href="#fsnav_gnss_glo">данные созвездия ГЛОНАСС</a>
+	struct* gal;             // указатель на <a href="#fsnav_gnss_gal">данные созвездия Galileo</a>
+	struct* bds;             // указатель на <a href="#fsnav_gnss_bds">данные созвездия BeiDou</a>
+							 
+	struct  epoch;           // текущая <a href="#fsnav_epoch">спутниковая эпоха</a> по часам приёмника
+	int     leap_sec;        // число високосных секунд
+	char    leap_sec_valid;  // признак достоверности числа високосных секунд
+							 
+	struct  sol;             // спутниковое <a href="#fsnav_sol">навигационное решение</a>
+} fsnav_gnss;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_air">Система воздушных сигналов</h3>
+
+<pre class="code">
+typedef struct {	
+	char* cfg;          // указатель на подстроку конфигурации с параметрами СВС
+	size_t cfglength;   // длина подстроки конфигурации с параметрами СВС
+                        
+	double t;           // время последнего обновления измерений СВС
+                        
+	double alt;         // барометрическая высота
+	double alt_std;     // оценка стандартного отклонения
+	char   alt_valid;   // признак достоверности измерения баровысоты
+                        
+	double vv;          // вертикальная скорость
+	double vv_std;      // оценка стандартного отклонения
+	char   vv_valid;    // признак достоверности измерения вертикальной скорости
+                        
+	double speed;       // воздушная скорость
+	double speed_std;   // оценка стандартного отклонения
+	char   speed_valid; // признак достоверности измерения воздушной скорости
+} fsnav_air;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_ref">Данные идеальной траектории</h3>
+
+<pre class="code">
+typedef struct {
+	char*  cfg;       // указатель на подстроку конфигурации с параметрами идеальной траектории
+	size_t cfglength; // длина подстроки конфигурации с параметрами идеальной траектории
+
+	double t;         // время идеальной траектории
+
+	double g[3];      // вектор местной удельной силы тяжести для идеальной траектории
+	char   g_valid;   // признак достоверности вектора местной удельной силы тяжести
+
+	fsnav_sol sol;     // данные идеальной траектории
+} fsnav_ref;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_sol">Навигационное решение</h3>
+
+<pre class="code">
+typedef struct {
+	double  x[3];          // прямоугольные координаты
+	char    x_valid;       // признак достоверности прямоугольных координат
+	double  x_std;         // оценки стандартного отклонения прямоугольных координат
+						   
+	double  llh[3];        // географические долгота, широта и высота
+	char    llh_valid;     // признак достоверности географических координат
+						   
+	double  v[3];          // вектор скорости
+	char    v_valid;       // признак достоверности вектора скорости
+	double  v_std;         // оценки стандартного отклонения компонент вектора скорости
+						   
+	double  q[4];          // кватернион ориентации
+	char    q_valid;       // признак достоверности кватерниона ориентации
+						   
+	double  L[9];          // матрица ориентации по строкам
+	char    L_valid;       // признак достоверности матрицы ориентации
+						   
+	double  rpy[3];        // углы ориентации: крен, тангаж, курс
+	char    rpy_valid;     // признак достоверности углов ориентации
+						   
+	double  dt;            // погрешность часов
+	double  dt_valid;      // признак достоверности погрешности часов
+						   
+	double* metrics        // метрики/индикаторы качества решения (определяются приложением)
+	size_t  metrics_count; // количество метрик/индикаторов качества решения, задаётся в <a href="#fsnav_cfg">конфигурации</a> ("metrics_count = ..."), 2 по умолчанию
+} fsnav_sol;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_epoch">Спутниковая эпоха</h3>
+
+<pre class="code">
+typedef struct {
+	int    Y; // год
+	int    M; // месяц
+	int    D; // день
+	
+	int    h; // час
+	int    m; // минута
+	double s; // секунда
+} fsnav_time_epoch;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_gps">Данные созвездия GPS</h3>
+
+<pre class="code">
+typedef struct {
+	char*   cfg;              // указатель на подстроку конфигурации с параметрами GPS
+	size_t  cfglength;        // длина подстроки конфигурации с параметрами GPS
+	
+	size_t  max_sat_count;    // максимально возможное число спутников в системе
+	size_t  max_eph_count;    // максимально возможное число эфимерид в системе
+	
+	struct* sat;              // массив данных <a href="#fsnav_gnss_sat">навигационных спутников</a>
+	char**  obs_types;        // массив типов измерений согласно стандарту RINEX (трёхсимвольные обозначения: C1C и т.д.)
+	size_t  obs_count;        // число типов измерений
+	
+	double  iono_a[4];        // параметры модели ионосферы из альманаха, первый набор
+	double  iono_b[4];        // параметры модели ионосферы из альманаха, второй набор
+	char    iono_valid;       // признак достоверности параметров модели ионосферы
+	
+	double  clock_corr[4];    // параметры модели ошибки часов системы из альманаха (a<sub>0</sub>, a<sub>1</sub>, секунда, неделя для коррекции к UTC)
+	char    clock_corr_to[2]; // обозначение опорной шкалы времени согласно стандарту RINEX: GP — GPS, UT — UTC, GA — Galileo и т.д.
+	char    clock_corr_valid; // признак достоверности параметров ошибки часов системы
+} fsnav_gnss_gps;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_glo">Данные созвездия ГЛОНАСС</h3>
+
+<pre class="code">
+typedef struct {
+	char*   cfg;              // указатель на подстроку конфигурации с параметрами ГЛОНАСС
+	size_t  cfglength;        // длина подстроки конфигурации с параметрами ГЛОНАСС
+      
+	size_t  max_sat_count;    // максимально возможное число спутников в системе
+	size_t  max_eph_count;    // максимально возможное число эфимерид в системе
+		  
+	struct* sat;              // массив данных <a href="#fsnav_gnss_sat">навигационных спутников</a>
+	int*    freq_slot;        // массив номеров частот навигационных спутников
+	char**  obs_types;        // массив типов измерений согласно стандарту RINEX (трёхсимвольные обозначения: C1C и т.д.)
+	size_t  obs_count;        // число типов измерений
+		  
+	double  clock_corr[4];    // параметры модели ошибки часов системы из альманаха (-&tau;<sub>C</sub>, 0, день, номер четырёхлетнего интервала для коррекции к UTC)
+	char    clock_corr_to[2]; // обозначение опорной шкалы времени согласно стандарту RINEX: GP — GPS, UT — UTC, GA — Galileo и т.д.
+	char    clock_corr_valid; // признак достоверности параметров ошибки часов системы
+} fsnav_gnss_glo;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_gal">Данные созвездия Galileo</h3>
+
+<pre class="code">
+typedef struct {
+	char*   cfg;              // указатель на подстроку конфигурации с параметрами Galileo
+	size_t  cfglength;        // длина подстроки конфигурации с параметрами Galileo
+	  
+	size_t  max_sat_count;    // максимально возможное число спутников в системе
+	size_t  max_eph_count;    // максимально возможное число эфимерид в системе
+		  
+	struct* sat;              // массив данных <a href="#fsnav_gnss_sat">навигационных спутников</a>
+	char**  obs_types;        // массив типов измерений согласно стандарту RINEX (трёхсимвольные обозначения: C1C и т.д.)
+	size_t  obs_count;        // число типов измерений
+
+	double  iono[3];          // параметры модели ионосферы из альманаха
+	char    iono_valid;       // признак достоверности параметров модели ионосферы
+		  
+	double  clock_corr[4];    // параметры модели ошибки часов системы из альманаха (a<sub>0</sub>, a<sub>1</sub>, секунда, неделя для коррекции к UTC)
+	char    clock_corr_to[2]; // обозначение опорной шкалы времени согласно стандарту RINEX: GP — GPS, UT — UTC, GA — Galileo и т.д.
+	char    clock_corr_valid; // признак достоверности параметров ошибки часов системы
+} fsnav_gnss_gal;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_bds">Данные созвездия BeiDou</h3>
+
+<pre class="code">
+typedef struct {
+	char*   cfg;              // указатель на подстроку конфигурации с параметрами Galileo
+	size_t  cfglength;        // длина подстроки конфигурации с параметрами Galileo
+	  
+	size_t  max_sat_count;    // максимально возможное число спутников в системе
+	size_t  max_eph_count;    // максимально возможное число эфимерид в системе
+		  
+	struct* sat;              // массив данных <a href="#fsnav_gnss_sat">навигационных спутников</a>
+	char**  obs_types;        // массив типов измерений согласно стандарту RINEX (трёхсимвольные обозначения: C1C и т.д.)
+	size_t  obs_count;        // число типов измерений
+		  
+	double  iono_a[4];        // параметры модели ионосферы из альманаха, первый набор
+	double  iono_b[4];        // параметры модели ионосферы из альманаха, второй набор
+	char    iono_valid;       // признак достоверности параметров модели ионосферы
+	
+	double  clock_corr[4];    // параметры модели ошибки часов системы из альманаха (a<sub>0</sub>, a<sub>1</sub>, секунда, неделя для коррекции к UTC)
+	char    clock_corr_to[2]; // обозначение опорной шкалы времени согласно стандарту RINEX: GP — GPS, UT — UTC, GA — Galileo и т.д.
+	char    clock_corr_valid; // признак достоверности параметров ошибки часов системы
+} fsnav_gnss_bds;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_sat">Данные навигационного спутника</h3>
+
+<pre class="code">
+typedef struct {
+	double* eph;         // массив эфемерид согласно стандарту RINEX, начиная с времени спутника toc: год, месяц и т.д.
+	char    eph_valid;   // признак достоверности эфемерид
+	
+	double  Deltatsv;    // погрешность часов спутника для последующего вычитания
+	                         // GPS согласно Разделу 20.3.3.3.3.1 спецификаций IS-GPS-200J (22 мая 2018), стр. 96
+	                         // ГЛОНАСС согласно Разделу 3.3.3 спецификаций ICD GLONASS Редакция 5.1 2008, со знаком минус
+	
+	double  t_em;        // время излучения сигнала
+	char    t_em_valid;  // признак достоверности времени излучения сигнала
+	
+	double  x[3];        // прямоугольные координаты спутника
+	char    x_valid;     // признак достоверности прямоугольных координат спутника
+	
+	double  v[3];        // вектор скорости спутника
+	char    v_valid;     // признак готовности вектора скорости спутника
+	
+	double  sinEl;       // синус угла возвышения спутника
+	char    sinEl_valid; // признак достоверности синуса угла возвышения спутника
+		  
+	double* obs;         // измерения от спутника, в порядке, указанном в массиве типов измерений <a href="#fsnav_gnss">навигационного созвездия</a>
+	char*   obs_valid;   // массив признаков достоверности измерений в том же порядке
+} fsnav_gnss_sat;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_gnss_settings">Настройки спутникового навигационного приёмника</h3>
+
+<pre class="code">
+typedef struct {
+	double sinEl_mask;   // синус маски угла возвышения
+						 
+	double code_sigma;   // априорное стандартное отклонение измеряемых кодовых псевдодальностей
+	double phase_sigma;  // априорное стандартное отклонение измеряемой фазы несущей радиосигнала
+						 
+	double ant_pos[3];   // априорные координаты антенны в связанном трёхграннике
+	double ant_pos_tol;  // допустимое отклонение координат
+						 
+	double leap_sec_def; // значение числа високосных секунд по умолчанию
+} fsnav_gnss_settings;
+</pre>
+
+
+
+
+
+<h3 id="fsnav_imu_const">Константы инерциальной навигации</h3>
+
+<pre class="code">
+typedef struct {
+	double
+		pi,      // 3.14159265358979323846264338327950288<sup><a href="#fsnav_imu_const_note">*</a></sup>    отношение длины окружности к диаметру
+		         //                                           с максимальным числом десятичных знаков в четверной точности
+		         //                                           согласно IEEE 754-2008 (формат binary128)
+		         //
+		rad2deg, // 180/pi                                    множитель для перевода радиан в градусы
+		         //
+				 //                                           параметры Земли согласно GRS-80:
+		u,       // 7.292115e-5                               угловая скорость вращения, рад/сек
+		a,       // 6378137.0                                 большая полуось модельного эллипсоида, м
+		e2,      // 6.6943800229e-3                           квадрат первого эксцентриситета модельного эллипсоида
+		ge,      // 9.7803267715                              ускорение нормального поля силы тяжести на экваторе, м/с<sup>2</sup>
+		fg;      // 5.302440112e-3                            гравитационное сжатие
+} fsnav_imu_const;
+</pre>
+
+<p><a name="fsnav_imu_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<h3 id="fsnav_gnss_const">Константы спутниковой навигации</h3>
+
+<pre class="code">
+typedef struct {
+	double
+	       pi,       // 3.1415926535898<sup><a href="#fsnav_gnss_const_note">*</a></sup>    отношение длины окружности к диаметру
+	       c,        // 299792458           скорость света, м/с
+	       sec_in_w, // 604800              число секунд в неделе
+	       sec_in_d; // 86400               число секунд в сутках
+	
+	struct gps;      //                     <a href="#fsnav_gps_const">константы GPS</a>
+	struct glo;      //                     <a href="#fsnav_glo_const">константы ГЛОНАСС</a>
+	struct gal;      //                     <a href="#fsnav_gal_const">константы Galileo</a>
+	struct bds;      //                     <a href="#fsnav_bds_const">константы BeiDou</a>
+} fsnav_gnss_const;
+</pre>
+
+<p><a name="fsnav_gnss_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<h3 id="fsnav_gps_const">Константы GPS</h3>
+
+<pre class="code">
+typedef struct {
+	double
+		mu, //  3.986005e14<sup><a href="#fsnav_gps_const_note">*</a></sup>            гравитационная постоянная Земли согласно спецификациям GPS
+		u,  //  7.2921151467e-5         угловая скорость вращения Земли согласно спецификациям GPS
+		a,  //  6378137.0               большая полуось модельного эллипсоида Земли согласно спецификациям GPS
+		e2, //  6.694379990141e-3       квадрат первого эксцентриситета модельного эллипсоида Земли согласно спецификациям GPS
+		F,  // -4.442807633e-10         релятивистская константа согласно спецификациям GPS
+		    
+		F1, //  1575.42e6               номинальная частота сигнала L1 согласно спецификациям GPS
+		L1, //  fsnav_gnss_const.c/F1    номинальная длина волны сигнала L1 согласно спецификациям GPS      
+		    
+		F2, //  1227.60e6               номинальная частота сигнала L2 согласно спецификациям GPS
+		L2; //  fsnav_gnss_const.c/F2    номинальная длина волны сигнала L2 согласно спецификациям GPS
+} fsnav_gps_const;
+</pre>
+
+<p><a name="fsnav_gps_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<h3 id="fsnav_glo_const">Константы ГЛОНАСС</h3>
+
+<pre class="code">
+typedef struct {
+	double
+		mu,  // 398600.4418e9<sup><a href="#fsnav_glo_const_note">*</a></sup>    гравитационная постоянная Земли согласно спецификациям ГЛОНАСС
+		J02, // 1082.62575e-6     вторая зональная гармоника гравитационного поля Земли согласно спецификациям ГЛОНАСС
+		u,   // 7.292115e-5       угловая скорость вращения Земли согласно спецификациям ГЛОНАСС
+		a,   // 6378136.0         большая полуось модельного эллипсоида Земли согласно спецификациям ГЛОНАСС
+		e2,  // 0.0066943662      квадрат первого эксцентриситета модельного эллипсоида Земли согласно спецификациям ГЛОНАСС
+		
+		F01, // 1602e6            номинальная центральная частота сигналов L1 согласно спецификациям ГЛОНАСС
+		dF1, // 562.5e3           номинальный шаг разделения частот сигналов L1 согласно спецификациям ГЛОНАСС
+
+		F02, // 1246e6            номинальная центральная частота сигналов L2 согласно спецификациям ГЛОНАСС
+		dF2; // 437.5e3           номинальный шаг разделения частот сигналов L2 согласно спецификациям ГЛОНАСС
+} fsnav_glo_const;
+</pre>
+
+<p><a name="fsnav_glo_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<h3 id="fsnav_gal_const">Константы Galileo</h3>
+
+<pre class="code">
+typedef struct {
+	double
+		mu,  // 3.986004418e14<sup><a href="#fsnav_gal_const_note">*</a></sup>         гравитационная постоянная Земли согласно спецификациям Galileo
+		u,   // 7.2921151467e-5         угловая скорость вращения Земли согласно спецификациям Galileo
+		a,   // 6378137.0               большая полуось модельного эллипсоида Земли согласно спецификациям Galileo
+		e2,  // 6.69438002290e-3        квадрат первого эксцентриситета модельного эллипсоида Земли согласно спецификациям Galileo
+		F,   // 4.442807309e-10         релятивистская константа согласно спецификациям Galileo
+
+		F1,  // 1575.42e6               номинальная частота сигнала E1 согласно спецификациям Galileo
+		L1,  // fsnav_gnss_const.c/F1    номинальная длина волны сигнала E1 согласно спецификациям Galileo
+		
+		F5a, // 1176.45e6               номинальная частота сигнала E5a согласно спецификациям Galileo	
+		L5a, // fsnav_gnss_const.c/F5a   номинальная длина волны сигнала E5a согласно спецификациям Galileo
+		
+		F5b, // 1207.14e6               номинальная частота сигнала E5b согласно спецификациям Galileo
+		L5b, // fsnav_gnss_const.c/F5b   номинальная длина волны сигнала E5b согласно спецификациям Galileo
+		
+		F6,  // 1278.75e6               номинальная частота сигнала E6 согласно спецификациям Galileo
+		L6;  // fsnav_gnss_const.c/F6    номинальная длина волны сигнала E6 согласно спецификациям Galileo
+} fsnav_gal_const;
+</pre>
+
+<p><a name="fsnav_gal_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<h3 id="fsnav_bds_const">Константы BeiDou</h3>
+
+<pre class="code">
+typedef struct {
+	double
+		mu,       //  3.986004418e14<sup><a href="#fsnav_bds_const_note">*</a></sup>          гравитационная постоянная Земли согласно спецификациям BeiDou
+		u,        //  7.292115e-5              угловая скорость вращения Земли согласно спецификациям BeiDou
+		a,        //  6378137.0                большая полуось модельного эллипсоида Земли согласно спецификациям BeiDou
+		e2,       //  6.6943800229008e-3       квадрат первого эксцентриситета модельного эллипсоида Земли согласно спецификациям BeiDou
+		F,        // -4.442807309043977e-10    релятивистская константа согласно спецификациям BeiDou
+		leap_sec, //  14                       число високосных секунд системы BeiDou относительно времени UTC
+
+		B1,       //  1561.098e6               номинальная частота сигнала B1 согласно спецификациям BeiDou
+		L1,       //  fsnav_gnss_const.c/B1     номинальная длина волны сигнала B1 согласно спецификациям BeiDou
+		
+		B2,       //  1207.140e6               номинальная частота сигнала B2 согласно спецификациям BeiDou
+		L2;       //  fsnav_gnss_const.c/B2     номинальная длина волны сигнала B2 согласно спецификациям BeiDou
+} fsnav_bds_const;
+</pre>
+
+<p><a name="fsnav_bds_const_note">*</a>Примечание: приведены значения по умолчанию; константы могут быть заменены в процессе работы программы.</p>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="fsnav_core_fun">Основные функции ядра</h2>
+
+<h3 id="fsnav_core_fun_descr">Описание</h3>
+
+
+<p>Основные функции ядра предназначены для управления основным циклом
+вычислений, а именно для:</p>
+
+<ul>
+	<li>добавления  <a href="#fsnav_plugins">частного алгоритма</a> к основному циклу 
+	<a href="#fsnav_add_plugin"><code>fsnav->add_plugin</code></a>;</li>
+	
+	<li>инициализации шины данных в соответствии с заданной <a href="#fsnav_cfg">строкой конфигурации</a> 
+	<a href="#fsnav_init"><code>fsnav->init</code></a>;</li>
+	
+	<li>прохода основного цикла <a href="#fsnav_step"><code>fsnav->step</code></a>;</li>
+	
+	<li>принудительного завершения работы <a href="#fsnav_terminate"><code>fsnav->terminate</code></a>;</li>
+	
+	<li>расширенной диспетчеризации <a href="#fsnav_plugins">частных алгоритмов</a> в основном цикле, включая:
+	<ul>
+		<li>удаление <a href="#fsnav_remove_plugin"><code>fsnav->remove_plugin</code></a>,</li>
+		<li>замены одного на другой <a href="#fsnav_replace_plugin"><code>fsnav->replace_plugin</code></a>,</li>
+		<li>добавление для выполнения с заданными периодом и смещением <a href="#fsnav_schedule_plugin"><code>fsnav->schedule_plugin</code></a>,</li>
+		<li>изменение периодичности выполнения <a href="#fsnav_reschedule_plugin"><code>fsnav->reschedule_plugin</code></a>,</li>
+		<li>приостановку выполнения <a href="#fsnav_suspend_plugin"><code>fsnav->suspend_plugin</code></a>,</li>
+		<li>возобновление выполнения <a href="#fsnav_resume_plugin"><code>fsnav->resume_plugin</code></a>.</li>
+	</ul>
+	</li>
+</ul>
+
+
+
+
+
+<h3 id="fsnav_add_plugin"><code class="long">fsnav->add_plugin</code> — добавление <a href="#fsnav_plugins">частного алгоритма</a> к основному циклу</h3>
+
+<h4>Вход</h4>
+
+<p>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного добавления типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// добавление частных алгоритмов в основной цикл
+if (   !<b>fsnav->add_plugin</b>(ins_wait_step_sync) // ожидание метки времени старта шага навигационного решения
+    || !<b>fsnav->add_plugin</b>(ins_get_sensors)    // получение измерений инерциальных датчиков
+   )
+	return 0;                                // ошибка добавления частных алгоритмов в основной цикл
+</pre>
+
+
+
+
+
+<h3 id="fsnav_init"><code class="long">fsnav->init</code> — инициализация <a href="#fsnav_bus">шины данных</a> в соответствии с заданной <a href="#fsnav_cfg">строкой
+конфигурации</a></h3>
+
+<h4>При инициализации:</h4>
+
+<ul>
+	<li><a href="#fsnav_cfg">строка конфигурации</a> копируется на <a href="#fsnav_bus">шину данных</a>;</li>
+	
+	<li>выделяется память на <a href="#fsnav_bus">шине данных</a> под подсистемы, 
+	указанные в <a href="#fsnav_cfg">строке конфигурации</a>;</li>
+	
+	<li>присваиваются указатели на подстроки конфигурации (поля <a href="#fsnav_bus"><code>cfg</code></a>), 
+	соответствующие подсистемам и настройкам (параметрам, общим для всех подсистем, 
+	поля <a href="#fsnav_bus"><code>cfg_settings</code></a>), и значения их длин 
+	(поля <a href="#fsnav_bus"><code>cfglength</code></a> и <a href="#fsnav_bus"><code>settings_length</code></a>);</li>
+	
+	<li>присваиваются значения <a href="#fsnav_bus">констант</a> по умолчанию (могут быть изменены в дальнейшем);</li>
+	
+	<li>присваиваются значения переменных по умолчанию;</li>
+	
+	<li>сбрасываются <a href="#fsnav_bus">признаки достоверности</a>.</li>
+</ul>
+
+<h4>Вход</h4>
+
+<p>Cтрока конфигурации типа <code>char[]</code>.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешной инициализации типа <code>char</code>:</p> 
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// инициализация шины данных с инерциальной подсистемой и двумя спутниковыми приёмниками системы ГЛОНАСС
+if (!<b>fsnav->init</b>("{imu:}{gnss[0]:{glo:}{gnss[1]:{glo:}}"))
+	return 0;                                             // ошибка инициализации
+</pre>
+
+
+
+
+
+<h3 id="fsnav_step"><code class="long">fsnav->step</code> — проход основного цикла</h3>
+
+<h4>Вход</h4>
+
+<p>Без входных данных.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак продолжения функционирования типа <code>char</code>:</p>
+<ul>
+	<li>1 — продолжение работы;</li>
+	<li>0 — остановка.</li>
+</ul>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// выполнение основного цикла до появления ошибки
+while (<b>fsnav->step</b>());
+</pre>
+
+
+
+
+
+<h3 id="fsnav_terminate"><code class="long">fsnav->terminate</code> — принудительное завершение работы</h3>
+
+<h4>Вход</h4>
+
+<p>Без входных данных.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного запуска завершения типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка (завершение уже в процессе).</li>
+</ul>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// завершение работы по прерыванию
+if (irq_id == IRQ_TERMINATION)
+    <b>fsnav->terminate</b>();
+</pre>
+
+
+
+
+
+<h3 id="fsnav_remove_plugin"><code class="long">fsnav->remove_plugin</code> — удаление <a href="#fsnav_plugins">частного алгоритма</a> из основного цикла</h3>
+
+<h4>Вход</h4>
+
+<p>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного удаления типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<p>Если вхождений заданного <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл больше одного, удаляются все вхождения.</p>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// удаление из основного цикла частного алгоритма получения измерений датчиков
+if (!<b>fsnav->remove_plugin</b>(ins_get_sensors))
+    return 0;                              // ошибка удаления
+</pre>
+
+
+
+
+
+<h3 id="fsnav_replace_plugin"><code class="long">fsnav->replace_plugin</code> — замена в основном цикле одного <a href="#fsnav_plugins">частного алгоритма</a> на другой</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li>Указатель на функцию прежнего (заменяемого) <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</li>
+	
+	<li>Указатель на функцию нового (заменяющего) <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешной замены типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<p>Если вхождений заданного <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл больше одного, заменяются все вхождения.</p>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// замена в основном цикле получения измерений датчиков с АЦП на получение измерений датчиков из файла
+if (!<b>fsnav->replace_plugin</b>(ins_get_sensors_adc, ins_get_sensors_file))
+    return 0;                                                         // ошибка замены
+</pre>
+
+
+
+
+
+<h3 id="fsnav_schedule_plugin"><code class="long">fsnav->schedule_plugin</code> — добавление <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл для выполнения с заданными периодом и смещением
+</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a>
+	типа <code>void(*)(void)</code>.</li>
+	
+	<li>Количество проходов основного цикла между выполнениями (период) типа <code>int</code>:
+	<ul>
+		<li>для приостановленного частного алгоритма — отрицательное число,</li>
+		<li>для неактивного частного алгоритма — 0.</li>
+	</ul>
+	</li>
+	
+	<li>Cмещение начала выполнения типа <code>int</code>; автоматически приводится в неотрицательный диапазон меньше периода.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного добавления типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<p><code>fsnav->schedule_plugin(function, 1, 0)</code> равнозначно <code>fsnav->add_plugin(function)</code>.</p>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// добавление частных алгоритмов 
+if (   !<b>fsnav->schedule_plugin</b>(ins_gravity, 400, 0) // вычисление местной силы тяжести раз в секунду на частоте 400 Гц
+    || !<b>fsnav->schedule_plugin</b>(ins_attitude, -1, 0) // счисление ориентации, приостановлен
+
+    || !<b>fsnav->schedule_plugin</b>(ins_vel_pos,  -4, 0) // интегрирование динамических уравнений с частотой 100 Гц, приостановлен
+    || !<b>fsnav->schedule_plugin</b>(ins_arinc_out, 0, 0) // выдача по ARINC, неактивен
+   )
+    return 0;                                      // ошибка добавления
+</pre>
+
+
+
+
+
+<h3 id="fsnav_reschedule_plugin"><code class="long">fsnav->reschedule_plugin</code> — изменения заданных периода и смещения выполнения <a href="#fsnav_plugins">частного алгоритма</a></h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</li> 
+	
+	<li>Новое количество проходов основного цикла между выполнениями (период) типа <code>int</code>: 
+	<ul>
+		<li>для приостановленного частного алгоритма — отрицательное число,</li>
+		<li>для неактивного частного алгоритма — 0.</li>
+	</ul>
+	</li>
+	
+	<li>Новое смещение начала выполнения типа <code>int</code>; автоматически приводится в диапазон от 0 до на единицу меньше периода.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного добавления типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<p>Если вхождений заданного <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл больше одного, заменяются все вхождения.</p>
+
+<h4>Пример</h4>
+
+<pre class="code">
+if (!<b>fsnav->reschedule_plugin</b>(ins_gravity, 2000, 0)) // перепланирование вычисления местной силы тяжести раз в 5 секунд на частоте 400 Гц
+    return 0;                                       // ошибка перепланирования
+</pre>
+
+
+
+
+
+<h3 id="fsnav_suspend_plugin"><code class="long">fsnav->suspend_plugin</code> — приостановка <a href="#fsnav_plugins">частного алгоритма</a> в основном цикле</h3>
+
+<h4>Вход</h4>
+
+<p>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешной приостановки типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<ol>
+	<li>Если вхождений заданного <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл больше одного, приостанавливаются все вхождения. </li>
+
+	<li>Функция равнозначна <a href="#fsnav_reschedule_plugin"><code>fsnav->reschedule_plugin</code></a> с отрицательным периодом.</li>
+</ol>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// приостановка получения данных СНС
+if (!<b>fsnav->suspend_plugin</b>(ins_get_gnss_data))
+	return 0;                                 // ошибка приостановки
+</pre>
+
+
+
+
+
+<h3 id="fsnav_resume_plugin"><code class="long">fsnav->resume_plugin</code> — возобновление приостановленного <a href="#fsnav_plugins">частного алгоритма</a> в основном цикле</h3>
+
+<h4>Вход</h4>
+
+<p>Указатель на функцию <a href="#fsnav_plugins">частного алгоритма</a> типа <code>void(*)(void)</code>.</p>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Признак успешного возобновления типа <code>char</code>:</p>
+<ul>
+	<li>1 — успешно;</li>
+	<li>0 — ошибка.</li>
+</ul>
+
+<h4>Примечания</h4>
+
+<ol>
+	<li>Если вхождений заданного <a href="#fsnav_plugins">частного алгоритма</a> в основной цикл больше одного, возобновляются все вхождения.</li> 
+	
+	<li>Функция равнозначна <a href="#fsnav_reschedule_plugin"><code>fsnav->reschedule_plugin</code></a> с положительным периодом.</li>
+</ol>
+
+<h4>Пример</h4>
+
+<pre class="code">
+// возобновление получения данных СНС
+if (!<b>fsnav->resume_plugin</b>(ins_get_gnss_data))
+    return 0;                                // ошибка приостановки
+</pre>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="fsnav_cfg">Строка конфигурации</h2>
+
+<h3 id="fsnav_cfg_descr">Описание</h3>
+
+<p>Строка конфигурации является человеко-читаемой строкой однобайтных символов ASCII и определяет, какие подсистемы на <a href="#fsnav_bus">шине данных</a> будут <a href="#fsnav_init">инициализированы</a>,
+а также содержит параметры, необходимые для работы <a href="#fsnav_plugins">частных алгоритмов</a>. Строка конфигурации
+состоит из <a href="#fsnav_parameters">параметров</a> и <a href="#fsnav_group">групп</a>. Каждая группа может быть пустой, а
+может включать <a href="#fsnav_group">подгруппы</a> и <a href="#fsnav_parameters">параметры</a>, как в приведённом <a href="#fsnav_cfg_example">примере</a>. Пустая группа означает
+необходимость <a href="#fsnav_init">инициализации</a> соответствующей
+подсистемы на <a href="#fsnav_bus">шине данных</a>, но без параметров.</p>
+
+<p>Форматирование в строке конфигурации (переносы строк, пробелы и другие нечитаемые символы) используется исключительно для удобства чтения, 
+и игнорируется при её обработке. Комментарии в строке конфигурации допускаются, если они не содержат текст, совпадающий с именами групп или параметров.
+Рекомендуется в комментариях указывать только единицы измерения величин.</p>
+
+
+
+
+
+<h3 id="fsnav_group">Группы и подгруппы</h3>
+
+<ol>
+	<li>Группа выделяется фигурными скобками,
+	после открытия которых следует название группы, и затем двоеточие:</br>
+	<code>{имя_группы: содержимое группы}</code></li>
+	
+	<li>Следующие группы задают <a href="#fsnav_init">инициализацию</a>
+	соответствующих подсистем на <a href="#fsnav_bus">шине данных</a>:
+	<ul>
+		<li><code>imu</code> — <a href="#fsnav_imu">инерциальная подсистема</a>;</li>
+		
+		<li><code>gnss[i]</code> — <a href="#fsnav_gnss">спутниковая подсистема</a>,
+		где <code>i</code> — номер приёмника от 0 до 9
+		(если приёмник один, группа может называться просто <code>gnss</code> без квадратных скобок и номера), 
+		которая должна включать хотя бы одну из следующих подгрупп: 
+		<code>gps</code>, <code>glo</code>, <code>gal</code>, <code>bds</code> 
+		для созвездий <a href="#fsnav_gnss_gps">GPS</a>, <a href="#fsnav_gnss_glo">ГЛОНАСС</a>, <a href="#fsnav_gnss_gal">Galileo</a> и <a href="#fsnav_gnss_bds">BeiDou</a> соответственно.
+		</li>
+		
+		<li><code>air</code> — <a href="#fsnav_air">система воздушных сигналов</a>;</li>
+	</ul>
+	</li>
+</ol>
+
+
+
+
+
+<h3 id="fsnav_parameters">Параметры</h3>
+
+<ol>
+	<li>Параметры, не входящие в <a href="#fsnav_group">группы</a> (<a href="#fsnav_group">подгруппы</a> внутри группы), не должны находиться между двумя группами (подгруппами
+	внутри группы). То есть, все они должны быть перечислены либо перед всеми
+	группами (подгруппами внутри группы), либо после всех групп (подгрупп внутри группы);</li>
+	
+	<li>Список стандартных параметров:</li>
+		<div class="container">
+		<table class="default">
+		
+			<colgroup>
+				<col style="width: 10%;">
+				<col style="width: 25%;">
+				<col style="width: 5%;">
+				<col style="width: 35%;">
+				<col style="width: 25%;">
+			</colgroup>
+			
+			<tbody>
+				<tr>
+					<th>Имя</th>
+					<th>Тип</th>
+					<th>По умолчанию</th>
+					<th>Назначение</th>
+					<th>Пример</th>
+				</tr>
+			
+				<tr>
+					<td><code>metrics_count</code></td>
+					<td>Целое десятичное число</td>
+					<td>2</td>
+					<td>Максимальное число метрик/индикаторов качества решения в <a href="#fsnav_sol">структурах с навигационным решением</a></td>
+					<td><code>metrics_count = 16</code></td>
+				</tr>
+			</tbody>
+		
+		</table>
+		</div>
+	
+	<li>Остальные параметры, а также их синтаксис, зависят от конкретных <a href="#fsnav_plugins">частных алгоритмов</a>,
+	добавляемых в основной цикл, и используются ими;</li>
+
+</ol>
+
+</div>
+<h3 id="fsnav_cfg_example">Пример строки конфигурации</h3>
+
+<pre class="code">
+{imu:                          // инерциальная подсистема
+	sensors_in = "wavesim.imu" 		// входной файл с показаниями инерциальных датчиков
+	freq = 400                 		// частота, Гц
+	lat = +55                  		// начальная широта по умолчанию, град
+	lon = +37                  		// начальная долгота по умолчанию, град
+	alt = +200                 		// начальная высота по умолчанию, м
+	alignment = 280            		// минимальное время начальной выставки
+	out = "ins.nav"            		// выходной файл с инерциальным решением
+}
+{gnss[0]:                      // базовый спутниковый навигационный приёмник
+	{gps:                          // созвездие GPS
+		eph_in =  "base.gps"           // входной файл с эфемеридами GPS
+		obs_use = [C1C]                // использование только кодовых измерений на частоте L1
+	}
+	{glo:                          // созвездие ГЛОНАСС
+		eph_in =  "base.glo"           // входной файл с эфемеридами ГЛОНАСС
+	} 
+	obs_in =  "base.obs"       // входной файл с измерениями
+	elev_mask = 10             // маска угла возвышения
+	out = "r0.txt"             // выходной файл со спутниковым решением базового приёмника
+}
+{gnss[1]:                      // вторичный спутниковый навигационный приёмник
+	{gps:                          // созвездие GPS
+		eph_in =  "rover.gps"          // входной файл с эфемеридами GPS
+		obs_off = [C2C]                // отключение кодовых измерений на частоте L2
+	}
+	{glo:                      // созвездие ГЛОНАСС
+		eph_in =  "rover.glo"      // входной файл с эфемеридами ГЛОНАСС
+	} 
+	obs_in =  "rover.obs"      // входной файл с измерениями
+	elev_mask = 10             // маска угла возвышения
+	out = "r1.txt"             // выходной файл со спутниковым решением вторичного приёмника
+}
+metrics_count = 8
+out = "fsnav.ins"               // выходной файл с навигационным решением
+</pre>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="fsnav_plugins">Частные алгоритмы</h2>
+
+<h3 id="fsnav_plugins_descr">Описание</h3>
+
+<p>Частные алгоритмы производят все операции, связанные с получением и
+обработкой данных, вычислением навигационного решения и его выдачей.
+Частные алгоритмы выполняются в порядке, в котором они <a href="#fsnav_add_plugin">добавлены</a> в основной цикл, с учётом
+возможностей расширенной диспетчеризации (<a href="#fsnav_schedule_plugin">периодическое выполнение</a>,
+<a href="#fsnav_suspend_plugin">приостановка</a>, <a href="#fsnav_resume_plugin">возобновление</a> и <a href="#fsnav_core_fun">т.д.</a>) Частные алгоритмы могут использовать и
+изменять данные на <a href="#fsnav_bus">шине данных</a>, и имеют
+минимум три режима работы: инициализация (при первом выполнении),
+завершение работы и штатное выполнение. Режим работы частного алгоритма
+определяется переменной <code>mode</code>
+на <a href="#fsnav_bus">шине данных</a>:</p>
+
+<ul>
+	<li><code>mode == 0</code> — инициализация
+	(парсинг параметров <a href="#fsnav_cfg">конфигурации</a>,
+	инициализация статических переменных, выделение памяти, открытие
+	файлов, портов и т.д.);</li>
+	
+	<li><code>mode &lt; 0</code> — завершение
+	работы (освобождение памяти, закрытие файлов, портов и т.д.); значение
+	может определять причину завершения;</li>
+	
+	<li><code>mode > 0</code> — штатное выполнение (значение может определять различные режимы работы).</li>
+</ul>
+
+<p>Функции частных алгоритмов должны удовлетворять перечисленным ниже <a href="#fsnav_plugin_rules">правилам разработки</a>. При разработке
+частного алгоритма рекомендуется использовать приведённые ниже <a href="#fsnav_plugin_template">шаблон</a> и <a href="#fsnav_plugin_example">пример</a>.</p>
+
+
+
+
+
+<h3 id="fsnav_plugin_rules">Правила разработки частных алгоритмов</h3>
+
+
+<ol>
+	<li>Функции частных алгоритмов не принимают аргументов, не возвращают
+	значений, и имеют указатель типа <code>void (*)(void)</code>.</li>
+	
+	<li>Частные алгоритмы взаимодействуют друг с другом только через <a href="#fsnav_bus">шину данных</a>.</li>
+	
+	<li>Исходный код частных алгоритмов должен компилироваться независимо
+	от других частных алгоритмов; удаление или добавление одного не должно
+	влиять на компиляцию других.</li>
+	
+	<li>Исходный код одного частного алгоритма располагается не более,
+	чем в одной паре файлов <code>заголовочный_файл.h</code>
+	+ <code>исходный_код.c</code>,
+	подключаемых к проекту; одна пара файлов может содержать исходный код
+	более, чем одного частного алгоритма.</li>
+	
+	<li>Частный алгоритм может быть разбит на функции, определённые в
+	файле исходного кода частного алгоритма, не требующие подключения нестандартных файлов и/или библиотек.</li>
+	
+	<li>Частный алгоритм может использовать встроенные сервисные функции
+	ядра, а может использовать собственные реализации аналогичных функций.</li>
+	
+	<li>В заголовочные файлы исходного кода частных алгоритмов выносятся
+	только основные функции частных алгоритмов.</li>
+	
+	<li>В описании (комментарии) частного алгоритма должны быть указаны:
+	<ul>
+		<li>краткое описание выполняемой функции,</li>
+		<li>список используемых частным алгоритмом полей <a href="#fsnav_bus">шины данных</a> (кроме констант, строки конфигурации и режима работы),</li>
+		<li>список изменяемых частным алгоритмом полей <a href="#fsnav_bus">шины данных</a> 
+		    (если частный алгоритм изменяет структуру основного цикла, приостанавливая или заменяя другие частные алгоритмы, 
+			указывается <code>core->plugins</code>).</li>
+		<li>список используемых частным алгоритмом параметров из <a href="#fsnav_cfg">строки конфигурации</a>, при необходимости с указанием группы (подгруппы), например:
+		<pre class="code">{imu: alignment} — время начальной выставки, сек</pre></li>
+	</ul>
+	
+	<li>Рекомендуется указывать в комментарии также условия, необходимые для корректной работы частного алгоритма, 
+	помимо наличия используемых им полей <a href="#fsnav_bus">шины данных</a> и параметров в <a href="#fsnav_cfg">строке конфигурации</a>: 
+	других частных алгоритмов, файлов с данными и т.п.</li>
+	
+	<li>Рекомендуется добавлять в исходный код файла с частным алгоритмом проверку номера версии <a href="#fsnav_bus">шины данных</a>, 
+	определённую в переменной препроцессора <code>FSNAV_BUS_VERSION</code>. 
+	Номер версии шины ядра также может проверяться во время исполнения программы в переменной <code>ver</code> на шине.</li>
+	
+	<li>Рекомендуется проверка инициализации указателей на используемые подсистемы <a href="#fsnav_bus">шины данных</a> (равенство <code>NULL</code>).</li>
+	
+	</li>
+</ol>
+
+
+
+
+
+<h3 id="fsnav_plugin_template">Шаблон функции частного алгоритма</h3>
+
+<pre class="code">
+#include "fsnav.h"
+
+/*
+	краткое описание
+	использует:
+		список полей <a href="#fsnav_bus">шины данных</a>
+		...
+	изменяет:
+		список полей <a href="#fsnav_bus">шины данных</a>
+		...
+	параметры:
+		список параметров <a href="#fsnav_cfg">конфигурации</a> с описанием и примером
+		...
+*/
+void имя_функции_частного_алгоритма(void) 
+{
+	...
+	
+	// проверка инициализации подсистемы на шине (при необходимости)
+	if (fsnav->... == NULL)
+		return;
+
+	if (fsnav->mode == 0) {     // инициализация
+		...
+	}
+	else if (fsnav->mode &lt; 0) { // завершение работы
+		...
+	}
+	else {                     // штатное выполнение
+		...
+	}
+}
+</pre>
+
+
+
+
+
+<h3 id="fsnav_plugin_example">Пример функции частного алгоритма</h3>
+
+<pre class="code">
+#include "fsnav.h"
+
+// проверка версии ядра
+#define FSNAV_STEP_SYNC_BUS_VERSION_REQUIRED 5
+#if FSNAV_BUS_VERSION &lt; FSNAV_STEP_SYNC_BUS_VERSION_REQUIRED
+	#error "fsnav bus version check failed, consider fetching the latest version of fsnav"
+#endif
+
+/*
+	шаг времени инерциального решения
+	использует:
+		не использует данные шины
+	изменяет:
+		imu->t
+		imu->w_valid
+		imu->f_valid
+	параметры:
+		{imu: freq} — частота работы навигационного алгоритма, Гц
+			тип: число
+			диапазон: 50-3200
+			значение по умолчанию: 400
+			пример: {imu: freq = 300}
+*/
+void fsnav_step_sync(void) 
+{
+	const char   freq_token[] = "freq";     // имя параметра в строке конфигурации, содержащего частоту
+	const double freq_range[] = {50, 3200}; // диапазон допустимых частот
+	const double freq_default = 400;        // частота по умолчанию
+
+	static double        dt = -1;           // шаг по времени
+	static unsigned long  i =  0;           // номер шага
+
+	char *freq_ptr;                         // указатель на значение частоты в строке конфигурации
+	
+	// проверка инициализации инерциальной подсистемы на шине
+	if (fsnav->imu == NULL)
+		return;
+
+	if (fsnav->mode == 0) {                  // инициализация
+		
+		// начальные значения
+		fsnav->t = 0;
+		i = 0;
+
+		// поиск значения частоты в конфигурации
+		freq_ptr = fsnav_locate_token(freq_token, fsnav->imu->cfg, fsnav->imu->cfglength, '=');
+		if (freq_ptr != NULL)
+			dt = atof(freq_ptr);
+		
+		// если значение не найдено в конфигурации, или значение вне заданных пределов, установка по умолчанию
+		if (freq_ptr == NULL || dt &lt; freq_range[0] || freq_range[1] &lt; dt)
+			dt = freq_default;
+	
+		// вычисление шага по времени
+		dt = 1 / dt;
+	}
+	else if (fsnav->mode &lt; 0) {              // завершение работы
+		// ничего не делать
+	}
+	else {                                  // шаг основного цикла			
+		// сброс достоверности инерциальных датчиков
+		fsnav->imu->w_valid = 0;
+		fsnav->imu->f_valid = 0;
+	
+		// шаг по времени
+		i++;
+		fsnav->imu->t = i*dt;
+	}
+}
+</pre>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<h2 id="fsnav_linal">Функции линейной алгебры</h2>
+
+<h3 id="fsnav_linal_descr">Описание</h3>
+
+<p>Следующие функции ядра реализуют базовые операции из линейной алгебры:</p>
+
+<ul>
+	<li>вычисление <a href="#fsnav_linal_dot">скалярного произведения векторов</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_vnorm">&#8467;&#8322;-нормы вектора</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_cross3x1">векторного произведения векторов</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_mmul">произведения двух матриц</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_qmul">произведения двух кватернионов</a>;</li>
+
+	<li>преобразование <a href="#fsnav_linal_mat2quat">матрицы ориентации в кватернион</a> и 
+	<a href="#fsnav_linal_quat2mat">обратно</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_rpy2mat">матрицы ориентации по углам ориентации</a> и 
+	<a href="#fsnav_linal_mat2rpy">обратно</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_eul2mat">переходной матрицы по вектору малого поворота</a>;</li>
+	
+	<li>преобразование <a href="#fsnav_linal_u_ij2k">двумерного индекса верхнетреугольной матрицы к одномерному</a> и 
+	<a href="#fsnav_linal_u_k2ij">обратно</a>;</li>
+	
+	<li>вычисление <a href="#fsnav_linal_u_mul">произведения верхнетреугольной матрицы на вектор</a>;</li>
+
+	<li>вычисление <a href="#fsnav_linal_u_inv">обратной матрицы к верхнетреугольной</a>;</li>
+	
+	<li>возведение верхнетреугольной матрицы <a href="#fsnav_linal_uuT">в квадрат с транспонированием</a>;</li>
+
+	<li>вычисление <a href="#fsnav_linal_chol">разложения Холецкого</a> в верхнетреугольной форме с транспонированием справа.</li>
+
+</ul>
+
+<p>Также имеются функции <a href="#fsnav_linal_kalman_update">этапа коррекции фильтра Калмана</a> (методом верхнетреугольного квадратного корня) и 
+<a href="#fsnav_linal_check_measurement_residual">проверки отклонения измерения от модельного значения</a> по критерию <span class="formula">n</span>-сигма.</p>
+
+
+
+
+
+
+<h3 id="fsnav_linal_dot"><code class="long">fsnav_linal_dot(u,v,m)</code> — вычисление скалярного произведения</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula">m</span>; первый вектор.</li> 
+	
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">m</span>; второй вектор.</li> 
+
+	<li><code>const size_t m</code> — размерность векторов.</li> 
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Скалярное произведение <span class="formula">u<sup>T</sup>&middot;v</span>.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_vnorm"><code class="long">fsnav_linal_vnorm(u,m)</code> — вычисление &#8467;&#8322;-нормы вектора</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula">m</span>; вектор.</li> 
+
+	<li><code>const size_t m</code> — размерность вектора.</li> 
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>&#8467;&#8322;-норма вектора <span class="formula">&#8214;u&#8214;&#8322;</span>.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_cross3x1"><code class="long">fsnav_linal_cross3x1(res,u,v)</code> — вычисление векторного произведения трехмерных векторов</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины 3; первый вектор.</li> 
+	
+	<li><code>double* v</code> — указатель на массив длины 3; второй вектор.</li> 
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины 3; векторное произведение <span class="formula">u&Cross;v</span>.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Совпадение указателей <code>res</code> с <code>u</code> или <code>v</code> не допускается.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_mmul"><code class="long">fsnav_linal_mmul(res,a,b,n,n1,m)</code> — вычисление произведения двух матриц</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* a</code> — указатель на массив длины <span class="formula">n&middot;n<sub>1</sub></span>; первая матрица размера <span class="formula">n</span> на <span class="formula">n<sub>1</sub></span>.</li> 
+	
+	<li><code>double* b</code> — указатель на массив длины <span class="formula">n<sub>1</sub>&middot;m</span>; вторая матрица размера <span class="formula">n<sub>1</sub></span> на <span class="formula">m</span>.</li>
+
+	<li><code>const size_t n, n1, m</code> — соответствующие размеры матриц.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">n&middot;m</span>; произведение матриц <span class="formula">a&middot;b</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Совпадение указателей <code>res</code> с <code>a</code> или <code>b</code> не допускается.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_mmul1T"><code class="long">fsnav_linal_mmul1T(res,a,b,n,m,n1)</code> — вычисление произведения двух матриц (первая транспонирована)</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* a</code> — указатель на массив длины <span class="formula">n&middot;m</span>; первая матрица размера <span class="formula">n</span> на <span class="formula">m</span>.</li> 
+	
+	<li><code>double* b</code> — указатель на массив длины <span class="formula">n&middot;n<sub>1</sub></span>; вторая матрица размера <span class="formula">n</span> на <span class="formula">n<sub>1</sub></span>.</li>
+
+	<li><code>const size_t n, m, n1</code> — соответствующие размеры матриц.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">m&middot;n<sub>1</sub></span>; произведение матриц <span class="formula">a<sup>T</sup>&middot;b</span>.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Совпадение указателей <code>res</code> с <code>a</code> или <code>b</code> не допускается.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_mmul2T"><code class="long">fsnav_linal_mmul2T(res,a,b,n,m,n1)</code> — вычисление произведения двух матриц (вторая транспонирована)</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* a</code> — указатель на массив длины <span class="formula">n&middot;m</span>; первая матрица размера <span class="formula">n</span> на <span class="formula">m</span>.</li> 
+	
+	<li><code>double* b</code> — указатель на массив длины <span class="formula">n<sub>1</sub>&middot;m</span>; вторая матрица размера <span class="formula">n<sub>1</sub></span> на <span class="formula">m</span>.</li>
+
+	<li><code>const size_t n, m, n1</code> — соответствующие размеры матриц.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">n&middot;n<sub>1</sub></span>; произведение матриц <span class="formula">a&middot;b<sup>T</sup></span>.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Совпадение указателей <code>res</code> с <code>a</code> или <code>b</code> не допускается.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_qmul"><code class="long">fsnav_linal_qmul(res,q,r)</code> — вычисление <a href="https://en.wikipedia.org/wiki/Quaternion#Hamilton_product" target="_blank">произведения двух кватернионов</a></h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* q</code> — указатель на массив длины 4; первый кватернион <span class="formula">q</span>.</li> 
+	
+	<li><code>double* r</code> — указатель на массив длины 4; второй кватернион <span class="formula">r</span></li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины 4; произведение кватернионов <span class="formula">q&#8728;r</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+
+	<li><code>res[0], q[0], r[0]</code> соответствуют скалярным частям кватернионов.</li>
+
+	<li>Совпадение указателей <code>res</code> с <code>q</code> или <code>r</code> не допускается.</li>
+
+</ol>
+
+
+
+
+
+<h3 id="fsnav_linal_mat2quat"><code class="long">fsnav_linal_mat2quat(q,R)</code> — преобразование <a href="https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix" target="_blank">матрицы ориентации в кватернион</a></h3>
+
+<h4>Вход</h4>
+
+<p><code>double* R</code> — указатель на массив длины 9; матрица ориентации <span class="formula">R &#8712; SO(3)</span>.</p> 
+	
+<h4>Выход</h4>
+
+<p><code>double* q</code> — указатель на массив длины 4; нормированный кватернион, соответствующий матрице <span class="formula">R</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p><code>q[0]</code> соответствует скалярной части кватерниона.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_quat2mat"><code class="long">fsnav_linal_quat2mat(R,q)</code> — преобразование <a href="https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix" target="_blank">кватерниона в матрицу ориентации</a></h3>
+
+<h4>Вход</h4>
+
+<p><code>double* q</code> — указатель на массив длины 4; нормированный кватернион <span class="formula">q</span>.</p>
+
+<h4>Выход</h4>
+
+<p><code>double* R</code> — указатель на массив длины 9; матрица <span class="formula">R &#8712; SO(3)</span>, соответствующая кватерниону <span class="formula">q</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+
+	<li><code>q[0]</code> соответствует скалярной части кватерниона.</li>
+	
+	<li>Норма кватерниона должна быть единичной: <span class="formula">&#8214;q&#8214; = 1</span>.</li>
+
+</ol>
+
+
+
+<h3 id="fsnav_linal_rpy2mat"><code class="long">fsnav_linal_rpy2mat(R,rpy)</code> — вычисление матрицы по углам крена, тангажа и истинного курса</h3>
+
+<h4>Вход</h4>
+
+<p><code>double* rpy</code> — указатель на массив длины 3; крен <span class="formula">&#947;</span> (roll), тангаж <span class="formula">&#952;</span> (pitch) и истинный курс <span class="formula">&#968;</span> (yaw) соответственно.</p> 
+
+<h4>Выход</h4>
+
+<p><code>double* R</code> — указатель на массив длины 9; матрица <span class="formula">R &#8712; SO(3)</span> перехода от географического трёхгранника к приборному: 
+
+<div class="container">
+<table class="matrix">
+    <tr>
+        <td>cos&#952;sin&#968;</td>
+        <td>cos&#952;cos&#968;</td>
+        <td>sin&#952;</td>
+    </tr>
+    <tr>
+        <td>-cos&#947;sin&#952;sin&#968; + sin&#947;cos&#968;</td>
+        <td>-cos&#947;sin&#952;cos&#968; - sin&#947;sin&#968;</td>
+        <td>&nbsp;cos&#947;cos&#952;</td>
+    </tr>
+	<tr>
+		<td>&nbsp;sin&#947;sin&#952;sin&#968; + cos&#947;cos&#968;</td>
+		<td>&nbsp;sin&#947;sin&#952;cos&#968; - cos&#947;sin&#968;</td>
+		<td>-sin&#947;cos&#952;</td>
+	</tr>
+</table>
+</div>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+	<li>Приборный трехгранник правый ортогональный: первая ось — продольная, вторая ось — в плоскости симметрии и направлена вверх при нулевом крене, третья ось — по правому крылу.</li>
+	
+	<li>Географический трехгранник правый ортогональный: первая ось — на восток, вторая ось — на север, третья ось — вверх по местной географической вертикали.</li>
+</ol>
+
+
+
+
+
+<h3 id="fsnav_linal_mat2rpy"><code class="long">fsnav_linal_mat2rpy(rpy,R)</code> — вычисление углов ориентации по матрице ориентации</h3>
+
+<h4>Вход</h4>
+
+<p><code>double* R</code> — указатель на массив длины 9; матрица <span class="formula">R &#8712; SO(3)</span> перехода от географического трёхгранника к приборному.</p>
+
+<h4>Выход</h4>
+
+<p><code>double* rpy</code> — указатель на массив длины 3; крен <span class="formula">&#947;</span> (roll), тангаж <span class="formula">&#952;</span> (pitch) и истинный курс <span class="formula">&#968;</span> (yaw) соответственно такие, что
+<code>R</code> имеет вид:
+
+<div class="container">
+<table class="matrix">
+	<tr>
+		<td>cos&#952;sin&#968;</td>
+		<td>cos&#952;cos&#968;</td>
+		<td>sin&#952;</td>
+	</tr>
+	<tr>
+		<td>-cos&#947;sin&#952;sin&#968; + sin&#947;cos&#968;</td>
+		<td>-cos&#947;sin&#952;cos&#968; - sin&#947;sin&#968;</td>
+		<td>&nbsp;cos&#947;cos&#952;</td>
+	</tr>
+	<tr>
+	<td>&nbsp;sin&#947;sin&#952;sin&#968; + cos&#947;cos&#968;</td>
+		<td>&nbsp;sin&#947;sin&#952;cos&#968; - cos&#947;sin&#968;</td>
+		<td>-sin&#947;cos&#952;</td>
+	</tr>
+</table>
+</div>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+	<li>Приборный трехгранник правый ортогональный: первая ось — продольная, вторая ось — в плоскости симметрии и направлена вверх при нулевом крене, третья ось — по правому крылу.</li>
+	
+	<li>Географический трехгранник правый ортогональный: первая ось — на восток, вторая ось — на север, третья ось — вверх по местной географической вертикали.</li>
+	
+	<li> При <span class="formula">&#952; = &#177; <sup>&#960;</sup>&frasl;<sub>2</sub></span> гарантируется соответствие величин <span class="formula">&#947;+&#968;</span> и <span class="formula">&#947;-&#968;</span> матрице ориентации <span class="formula">R</span>.
+</ol>
+
+
+
+
+
+<h3 id="fsnav_linal_eul2mat"><code class="long">fsnav_linal_eul2mat(R,e)</code> — вычисление переходной матрицы по вектору малого поворота</h3>
+
+<h4>Вход</h4>
+
+<p><code>double* e</code> — указатель на массив длины 3; вектор <span class="formula">e</span> малого поворота (Эйлеров вектор).</p>
+
+<h4>Выход</h4>
+
+<p><code>double* R</code> — указатель на массив длины 9; переходная матрица по формуле Родрига:
+
+<div class="formula">
+R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub> + [e&#770]<sup>2</sup>·<sup>(1-cos&#8214;e&#8214;)</sup>&frasl;<sub>&#8214;e&#8214;<sup>2</sup></sub>
+</div>
+
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Мартица <span class="formula">[e&#770]</span> имеет вид:</p>
+
+<div class="container">
+<table class="matrix">
+	<tr>
+		<td>&nbsp;0</td>
+		<td>&nbsp;e<sub>3</sub></td>
+		<td>-e<sub>2</sub></td>
+	</tr>
+	<tr>
+		<td>-e<sub>3</sub></td>
+		<td>&nbsp;0</td>
+		<td>&nbsp;e<sub>1</sub></td>
+	</tr>
+	<tr>
+		<td>&nbsp;e<sub>2</sub></td>
+		<td>-e<sub>1</sub></td>
+		<td>&nbsp;0</td>
+	</tr>
+</table>
+</div>
+
+
+
+
+
+<h3 id="fsnav_linal_u_ij2k"><code class="long">fsnav_linal_u_ij2k(&k,i,j,m)</code> — преобразование индексов для верхнетреугольной матрицы в одномерном массиве</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>const size_t i,j</code> — индекс строки <span class="formula">i = 0,1,..,m-1</span> и столбца <span class="formula">j = 0,1,..,m-1</span> в двухмерной матрице.</li>
+
+	<li><code>const size_t m</code> — размер матрицы.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>size_t* k</code> — указатель на переменную; индекс <span class="formula">k = 0,1,..,[<sup>m(m+1)</sup>&frasl;<sub>2</sub>]-1</span> 
+в одномерном массиве элементов верхнетреугольной матрицы, соответствующий строке с индексом <span class="formula">i</span> и столбцу с индексом <span class="formula">j</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Пример</h4>
+
+<p>Для матрицы размера 3 на 3 одномерный индекс будет равен:</p>
+
+<div class="container">
+<table class="matrix">
+	<tr> <td>k = 0</td> <td>k = 1</td> <td>k = 2</td> </tr>
+	<tr> <td>—    </td> <td>k = 3</td> <td>k = 4</td> </tr>
+	<tr> <td>—    </td> <td>—    </td> <td>k = 5</td> </tr>
+</table>
+</div>
+
+
+
+
+
+<h3 id="fsnav_linal_u_k2ij"><code class="long">fsnav_linal_u_k2ij(&i,&j,k,m)</code> — обратное преобразование индекса в одномерном массиве для верхнетреугольной матрицы</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>const size_t k</code> — индекс <span class="formula">k = 0,1,..,[<sup>m(m+1)</sup>&frasl;<sub>2</sub>]&#8722;1</span> 
+	в одномерном массиве элементов верхнетреугольной матрицы.</li>
+
+	<li><code>const size_t m</code> — размер матрицы.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>size_t *i,*j</code> — указатели на переменные; 
+	индексы строки <span class="formula">i = 0,1,..,m-1</span> и столбца <span class="formula">j = 0,1,..,m-1</span> в двухмерной матрице, 
+	соответствующие индексу <span class="formula">k</span> в одномерном массиве.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Пример</h4>
+
+<p>Для матрицы размера 3 на 3 одномерный индекс будет равен:</p>
+
+<div class="container">
+<table class="matrix">
+	<tr> <td>k = 0</td> <td>k = 1</td> <td>k = 2</td> </tr>
+	<tr> <td>—    </td> <td>k = 3</td> <td>k = 4</td> </tr>
+	<tr> <td>—    </td> <td>—    </td> <td>k = 5</td> </tr>
+</table>
+</div>
+
+
+
+
+
+<h3 id="fsnav_linal_u_mul"><code class="long">fsnav_linal_u_mul(res,u,v,n,m)</code> — умножение верхнетреугольной матрицы на матрицу</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">n&middot;m</span>; матрица.</li>
+	
+	<li><code>const size_t n,m</code> — соответствующие размеры матриц.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">n&middot;m</span>; произведение верхнетреугольной матрицы на матрицу <span class="formula">u&middot;v</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Допускается совпадение указателей <code>res</code> и <code>v</code> для замены координат вектора на результат произведения.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_uT_mul_v"><code class="long">fsnav_linal_uT_mul_v(res,u,v,m)</code> — умножение транспонированной верхнетреугольной матрицы на вектор</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">m</span>; вектор.</li>
+	
+	<li><code>const size_t m</code> — размер вектора.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">m</span>; произведение транспонированной матрицы на вектор <span class="formula">u<sup>T</sup>&middot;v</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_u_inv"><code class="long">fsnav_linal_u_inv(res,u,m)</code> — обращение невырожденной верхнетреугольной матрицы</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; невырожденная верхнетреугольная матрица.</li>
+	
+	<li><code>const size_t m</code> — размер матрицы.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная обратная матрица <span class="formula">u<sup>-1</sup></span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Допускается совпадение указателей <code>res</code> и <code>u</code> для замены матрицы на обратную.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_uuT"><code class="long">fsnav_linal_uuT(res,u,m)</code> — квадрат верхнетреугольной матрицы с транспонированием</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+	
+	<li><code>const size_t m</code> — размер матрицы.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричного произведения матрицы на транспонированную <span class="formula">u&middot;u<sup>T</sup></span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+
+	<li>Допускается совпадение указателей <code>res</code> и <code>u</code> для замены матрицы на её квадрат с транспонированием.</li>
+
+	<li>Функция является обратной к <a href="#fsnav_linal_chol">верхнетреугольному разложению Холецкого</a>.</li>
+
+</ol>
+
+
+<h3 id="fsnav_linal_chol"><code class="long">fsnav_linal_chol(S,P,m)</code> — вычисление верхнетреугольного <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">разложения Холецкого</a></h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* P</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричной неотрицательно-определенной матрицы.</li>
+	
+	<li><code>const size_t m</code> — размер матрицы.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный множитель Холецкого такой, что <span class="formula">P = S&middot;S<sup>T</sup></span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Допускается совпадение указателей <code>res</code> и <code>u</code> для замены матрицы на её множитель Холецкого.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update(x,S,K,z,h,sigma,m)</code> — скалярный <a href="https://en.wikipedia.org/wiki/Kalman_filter#Update" target="_blank">этап коррекции фильтра Калмана</a></h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* x</code> — указатель на массив длины <span class="formula">m</span>; текущая (априорная) оценка вектора состояния.</li> 
+
+	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
+	матрицы ковариации ошибки текущей оценки.</li>
+	
+	<li><code>double z</code> — скалярное измерение.</li>
+	
+	<li><code>double *h</code> — указатель на массив длины <span class="formula">m</span>; строка коэффициентов модели декоррелированного скалярного измерения: <span class="formula">z = h&middot;x + r</span>.</li>
+	
+	<li><code>double sigma</code> — априорное стандартное отклонение ошибки измерения: <span class="formula">&#963; = &#8730;M[r<sup>2</sup>]</span>.</li>
+	
+	<li><code>const size_t m</code> — размерность вектора состояния.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<ol>
+	<li><code>double* x</code> — апостериорная оценка вектора состояния.</li> 
+
+	<li><code>double* S</code> — верхнетреугольный множитель Холецкого апостериорной матрицы ковариации ошибки оценки.</li>
+	
+	<li><code>double* K</code> — массив размера <span class="formula">m</span>; коэффициенты фильтра.</li>
+	
+</ol>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отклонение измерения от модели при априорной оценке вектора состояния.</p>
+
+<h4>Примечания</h4>
+
+<ol>
+
+	<li>Реализован фильтр Калмана <a href="https://en.wikipedia.org/wiki/Kalman_filter#Square_root_form" target="_blank">методом квадратного корня</a> 
+	в форме верхнетреугольного разложения Холецкого.</li>
+
+	<li>При наличии нескольких коррелированных измерений (вектора измерений <span class="formula">z* = H*&middot;x + r*, R = M[r*&middot;r*<sup>T</sup>]</span>) 
+	они должны быть предварительно декоррелированы: 
+	
+	<div class="formula">
+	z = S<sup>-1</sup>&middot;z*, H = S<sup>-1</sup>&middot;H*, 
+	где S&middot;S<sup>T</sup> = R &#8658; M[(z-H&middot;x)&middot;(z-H&middot;x)<sup>T</sup>] = E
+	</div>
+	</li>
+
+</ol>
+
+
+
+<h3 id="fsnav_linal_check_measurement_residual"><code class="long">fsnav_linal_check_measurement_residual(x,S,z,h,sigma,k_sigma,m)</code> — проверка отклонения измерения от модельного значения</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* x</code> — указатель на массив длины <span class="formula">m</span>; текущая оценка вектора состояния.</li> 
+
+	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
+	матрицы ковариации ошибки текущей оценки.</li>
+	
+	<li><code>double z</code> — скалярное измерение.</li>
+	
+	<li><code>double* h</code> — указатель на массив длины <span class="formula">m</span>; строка коэффициентов модели измерения: <span class="formula">z = h&middot;x + r</span>.</li>
+	
+	<li><code>double sigma</code> — априорное стандартное отклонение ошибки измерения: <span class="formula">&#963; = &#8730;M[r<sup>2</sup>]</span>.</li>
+	
+	<li><code>double k_sigma</code> — коэффициент доверительного интервала: 2 для <span class="formula">2-&#963;</span> (95%), 3 для <span class="formula">3-&#963;</span> (99.7%) и т.д.</li>
+	
+	<li><code>const size_t m</code> — размерность вектора состояния.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<ul>
+	<li>1 — если отклонение находится в пределах ожидаемого уровня, т.е.
+	<div class="formula">
+	|z - h&middot;x| &lt; k<sub>&#963;</sub>&middot;&#8730;[h&middot;S&middot;S<sup>T</sup>&middot;h<sup>T</sup> + &#963;<sup>2</sup>]
+	</div>
+	</li>
+	
+	<li>0 — в противном случае.</li>
+</ul>
+
+
+
+
+
+<hr style="margin-bottom: 10px;">
+
+
+
+
+
+</body>
+</html>
