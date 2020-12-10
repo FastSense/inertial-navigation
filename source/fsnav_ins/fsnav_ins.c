@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <limits.h>
+#include <float.h>
+#include <math.h>
 
 // заголовочные файлы библиотек лаборатории
 #include "../../libs/fsnav.h"
@@ -20,6 +21,8 @@
 #define FSNAV_INS_BUFFER_SIZE 4096
 
 // частные алгоритмы приложения
+	// диспетчеризация
+void fsnav_ins_scheduler(void);
 	// ввод и вывод
 void fsnav_ins_step_sync              (void);
 void fsnav_ins_read_conv_input        (void);
@@ -34,6 +37,7 @@ void fsnav_ins_imu_calibration        (void);
 void fsnav_ins_imu_calibration_temp   (void);
 	// алгоритмы навигации
 void fsnav_ins_compensate_static_drift(void);
+void fsnav_ins_alignment_static_accs  (void);
 
 void main(void)
 {
@@ -85,18 +89,21 @@ void main(void)
 
 	// добавление частных алгоритмов
 	if (   !fsnav->add_plugin(fsnav_ins_step_sync              ) // ожидание метки времени шага навигационного решения
-		|| !fsnav->add_plugin(fsnav_ins_read_raw_input_temp    ) // считывание сырых показаний датчиков, температуры и их преобразование
-		|| !fsnav->add_plugin(fsnav_ins_imu_calibration_temp   ) // вычисление откалиброванных показаний датчиков (температурная модель)
-		|| !fsnav->add_plugin(fsnav_ins_switch_imu_axes        ) // перестановка осей инерциальных датчиков
-		|| !fsnav->add_plugin(fsnav_ins_write_sensors          ) // запись преобразованных показаний датчиков
-		|| !fsnav->add_plugin(fsnav_ins_gravity_normal         ) // модель поля силы тяжести
-		|| !fsnav->add_plugin(fsnav_ins_alignment_static       ) // начальная выставка
-		|| !fsnav->add_plugin(fsnav_ins_attitude_rodrigues     ) // ориентация
-		|| !fsnav->add_plugin(fsnav_ins_motion_euler           ) // положение и скорость
-		|| !fsnav->add_plugin(fsnav_ins_motion_vertical_damping) // демпфирование в вертикальном канале
-		|| !fsnav->add_plugin(fsnav_ins_write_output           ) // запись навигационного решения
-		|| !fsnav->add_plugin(fsnav_ins_print_progress         ) // вывод на экран
-		) {
+	    || !fsnav->add_plugin(fsnav_ins_scheduler              ) // диспетчер
+	    || !fsnav->add_plugin(fsnav_ins_read_raw_input_temp    ) // считывание сырых показаний датчиков, температуры и их преобразование
+	    || !fsnav->add_plugin(fsnav_ins_imu_calibration_temp   ) // вычисление откалиброванных показаний датчиков (температурная модель)
+	    || !fsnav->add_plugin(fsnav_ins_switch_imu_axes        ) // перестановка осей инерциальных датчиков
+	    || !fsnav->add_plugin(fsnav_ins_write_sensors          ) // запись преобразованных показаний датчиков
+	    || !fsnav->add_plugin(fsnav_ins_gravity_normal         ) // модель поля силы тяжести: стандартная
+	    || !fsnav->add_plugin(fsnav_ins_gravity_constant       ) // модель поля силы тяжести: постоянная
+	    || !fsnav->add_plugin(fsnav_ins_alignment_static       ) // начальная выставка: по акселерометрам и гироскопам
+	    || !fsnav->add_plugin(fsnav_ins_alignment_static_accs  ) // начальная выставка: только по акселерометрам
+	    || !fsnav->add_plugin(fsnav_ins_attitude_rodrigues     ) // ориентация
+	    || !fsnav->add_plugin(fsnav_ins_motion_euler           ) // положение и скорость
+	    || !fsnav->add_plugin(fsnav_ins_motion_vertical_damping) // демпфирование в вертикальном канале
+	    || !fsnav->add_plugin(fsnav_ins_write_output           ) // запись навигационного решения
+	    || !fsnav->add_plugin(fsnav_ins_print_progress         ) // вывод на экран
+	    ) {
 		printf("error: couldn't add plugins.\n"); // ошибка добавления частных алгоритмов
 		return;									
 	}
@@ -118,6 +125,86 @@ void main(void)
 
 
 
+// диспетчеризация
+	/*
+		диспетчер выполнения плагинов и модификаций навигационного алгоритма
+		использует:
+			fsnav->imu->t
+		изменяет:
+			fsnav->imu_const (в случае выставления флагов)
+		параметры:
+			time_limit — ограничение по времени выполнения
+				тип: натуральное число
+				диапазон: 0-DBL_MAX
+				значение по умолчанию: DBL_MAX
+				пример: time_limit = 360
+			u_zero     — флаг обнуления угловой скорости земли в навигацонном алгоритме
+			e2_zero    — флаг обнуления эксцентриситета в навигационном алгоритме
+			g_const    — флаг постоянства силы тяжести
+			accs_align — флаг выставки по акселерометрам
+		примечание:
+			флаги достаточно указать в конфигурацинной строке без указания значений
+	*/
+void fsnav_ins_scheduler(void)
+{
+	const char
+		u_token   [] = "u_zero",     // имя параметра в строке конфигурации для обнуления угловой скорости земли
+		e2_token  [] = "e2_zero",    // имя параметра в строке конфигурации для обнуления эксцентриситета
+		g_token   [] = "g_const",    // имя параметра в строке конфигурации, определяющего режим счисления силы тяжести
+		accs_token[] = "accs_align"; // имя параметра в строке конфигурации для выставки по акселерометрам
+
+	const char    limit_token[] = "time_limit"; // имя параметра в строке конфигурации для ограничения по времени
+	const double  limit_range   = 0;            // нижняя граница ограничения по времени
+	const double  limit_default = DBL_MAX;    // стандартное ограничение по времени (без ограничения)
+	static double time_limit    = -1;
+		
+	char *cfg_ptr; // указатель на параметр в строке конфигурации
+
+	// инициализация
+	if (fsnav->mode == 0) {
+		// поиск флага обнуления угловой скорости в конфигурации
+		cfg_ptr = fsnav_locate_token(u_token, fsnav->cfg_settings, fsnav->settings_length, 0);
+		if (cfg_ptr != NULL)
+			fsnav->imu_const.u = 0;
+		// поиск флага обнуления эксцентриситета в конфигурации
+		cfg_ptr = fsnav_locate_token(e2_token, fsnav->cfg_settings, fsnav->settings_length, 0);
+		if (cfg_ptr != NULL)
+			fsnav->imu_const.e2 = 0;
+		// поиск флага постоянста силы тяжести
+		cfg_ptr = fsnav_locate_token(g_token, fsnav->cfg_settings, fsnav->settings_length, 0);
+		if (cfg_ptr != NULL)
+			fsnav->suspend_plugin(fsnav_ins_gravity_normal);
+		else
+			fsnav->suspend_plugin(fsnav_ins_gravity_constant);
+		// поиск флага выставки по акселерометрам
+		cfg_ptr = fsnav_locate_token(accs_token, fsnav->cfg_settings, fsnav->settings_length, 0);
+		if (cfg_ptr != NULL)
+			fsnav->suspend_plugin(fsnav_ins_alignment_static);
+		else
+			fsnav->suspend_plugin(fsnav_ins_alignment_static_accs);
+		// поиск ограничения по времени в конфигурации
+		cfg_ptr = fsnav_locate_token(limit_token, fsnav->cfg_settings, fsnav->settings_length, '=');
+		if (cfg_ptr != NULL)
+			time_limit = atof(cfg_ptr);
+		// если значение не найдено в конфигурации, или значение вне заданных пределов, установка по умолчанию
+		if (cfg_ptr == NULL || time_limit < limit_range)
+			time_limit = limit_default;
+	}
+
+	// завершение работы
+	else if (fsnav->mode < 0) {}
+
+	// шаг основного цикла
+	else {
+		if (fsnav->imu->t > time_limit)
+			fsnav->mode = -1;
+	}
+}
+
+
+
+
+
 // ввод и вывод
 	/*
 		шаг времени инерциального решения
@@ -133,10 +220,6 @@ void main(void)
 				диапазон: 50-3200
 				значение по умолчанию: 100
 				пример: {imu: freq = 400}
-			step_limit — ограничение по количеству шагов
-				тип: натуральное число
-				значение по умолчанию: ULONG_MAX
-				пример: step_limit = 720000
 	*/
 void fsnav_ins_step_sync(void) 
 {
@@ -144,12 +227,8 @@ void fsnav_ins_step_sync(void)
 	const double freq_range[] = {50, 3200}; // диапазон допустимых частот
 	const double freq_default = 100;        // частота по умолчанию
 
-	const char          limit_token[] = "step_limit";
-	const unsigned long limit_default = ULONG_MAX;
-
 	static double        dt    = -1;        // шаг по времени
 	static unsigned long i     =  0;        // номер шага
-	static unsigned long limit = -1;
 
 	char *cfg_ptr;                          // указатель на строку конфигурации
 
@@ -171,14 +250,6 @@ void fsnav_ins_step_sync(void)
 			dt = freq_default;
 		// вычисление шага по времени
 		dt = 1 / dt;
-
-		// происк максимального количества измерений
-		cfg_ptr = fsnav_locate_token(limit_token,  fsnav->cfg_settings, fsnav->settings_length, '=');
-		if (cfg_ptr != NULL)
-			limit = strtoul(cfg_ptr, NULL, 0);	
-		// если значение не найдено в конфигурации
-		if (cfg_ptr == NULL)
-			limit = limit_default;
 	}
 
 	// завершение работы
@@ -192,9 +263,6 @@ void fsnav_ins_step_sync(void)
 		// шаг по времени
 		i++;
 		fsnav->imu->t = i*dt;
-
-		if (i > limit)
-			fsnav->mode = -1;
 	}
 }
 
@@ -1062,5 +1130,102 @@ void fsnav_ins_compensate_static_drift(void)
 			for (n = 0; n < 3; n++)
 				fsnav->imu->w[n] -= w0[n];
 		}
+	}
+}
+
+/*
+	алгоритм выставки для датчиков низкого класса точности
+	тангаж и крен вычисляются, курс равен нулю; матрица ориентации вычисляется по этим углам
+	рекомендуется для систем, в которых измерения гироскопов не позволяют произвести полную выставку
+
+	roll  = atan2( <f_2>, <f_3>)
+	pitch = atan2(-<f_1>, sqrt(<f_2>^2+<f_3>^2)
+	yaw   = 0
+	здесь <f_i> — среднее значение показаний акселерометра на этапе выставки 
+		
+	использует:
+		fsnav->imu->t
+		fsnav->imu->f
+		fsnav->imu->f_valid
+	изменяет:
+		fsnav->imu->sol.L
+		fsnav->imu->sol.L_valid
+		fsnav->imu->sol.q
+		fsnav->imu->sol.q_valid
+		fsnav->imu->sol.rpy
+		fsnav->imu->sol.rpy_valid
+		fsnav->imu->sol.v
+		fsnav->imu->sol.v_valid
+	параметры:
+		{imu: alignment} — длительность выставки, сек
+			тип: число с плавающей точкой
+			диапазон: +0 до +inf
+			по умолчанию: 300
+			пример: {imu: alignment = 900}
+*/
+void fsnav_ins_alignment_static_accs(void) {
+
+	const char   t0_token[] = "alignment"; // параметр длительности выставки в конфигурационной строке
+	const double t0_default = 300;         // стандартная длительность выставки
+
+	static double 
+		f[3] = {0,0,0}, // среднее значение показаний акселерометров
+		t0      = -1;   // длительность выставки
+	static int n = 0;   // счетчик количества измерений
+
+	char   *cfg_ptr;    // указатель на параметр в строке конфигурации
+	double  n1_n;       // (n - 1)/n
+	size_t  i, j;       // индексы
+
+	// проверка инерциальной подсистемы на шине
+	if (fsnav->imu == NULL)
+		return;
+
+	// инициализация
+	if (fsnav->mode == 0) {
+		// обнуление счетчика
+		n = 0;
+		// парсинг длительности выставки в конфигурационной строке
+		cfg_ptr = fsnav_locate_token(t0_token, fsnav->imu->cfg, fsnav->imu->cfglength, '=');
+		if (cfg_ptr != NULL)
+			t0 = atof(cfg_ptr);		
+		if (cfg_ptr == NULL || t0 <= 0)
+			t0 = t0_default;
+	}
+
+	// завершение работы
+	else if (fsnav->mode < 0) {}
+
+	// операции на каждом шаге
+	else {
+		// проверка времени выставки
+		if (fsnav->imu->t > t0)
+			return;
+		// обнуление флагов достоверности
+		fsnav->imu->sol.L_valid   = 0;
+		fsnav->imu->sol.q_valid   = 0;
+		fsnav->imu->sol.rpy_valid = 0;
+		// обновление среднего и углов ориентации
+		if (fsnav->imu->w_valid && fsnav->imu->f_valid) {
+			n++;
+			n1_n = (n - 1.0)/n;
+			for (i = 0; i < 3; i++)
+				f[i] = f[i]*n1_n + fsnav->imu->f[i]/n;
+
+			fsnav->imu->sol.rpy[0] = atan2(-f[2], f[1]);
+			fsnav->imu->sol.rpy[1] = atan2( f[0], sqrt(f[1]*f[1] + f[2]*f[2]));
+			fsnav->imu->sol.rpy[2] = 0.0;
+		}
+		fsnav->imu->sol.rpy_valid = 1;
+		// обновление матрциы ориентации
+		fsnav_linal_rpy2mat(fsnav->imu->sol.L, fsnav->imu->sol.rpy);
+		fsnav->imu->sol.L_valid = 1;
+		// обновление кватерниона
+		fsnav_linal_mat2quat(fsnav->imu->sol.q  , fsnav->imu->sol.L);
+		fsnav->imu->sol.q_valid = 1;
+		// обнуление скорости (поскольку предполагается статическая выставка)
+		for (i = 0; i < 3; i++)
+			fsnav->imu->sol.v[i] = 0;
+		fsnav->imu->sol.v_valid = 1;
 	}
 }

@@ -222,7 +222,7 @@
 
 <body>
 <h1>Архитектура ПО БИНС</h1>
-<p style="font-weight: bold; text-align: center;">01-12-2020</p>
+<p style="font-weight: bold; text-align: center;">09-12-2020</p>
 
 
 
@@ -468,7 +468,8 @@ typedef struct {
 	struct* gnss;            // массив наборов <a href="#fsnav_gnss">спутниковых данных</a> (поддерживается до 10 приёмников)
 	size_t  gnss_count;      // количество спутниковых приемников
 							 
-	fsnav_air* air;           // указатель на данные <a href="#fsnav_air">системы воздушных сигналов</a>
+	struct* air;             // указатель на данные <a href="#fsnav_air">системы воздушных сигналов</a>
+	struct* ref;             // указатель на данные <a href="#fsnav_ref">идеальной траектории</a>
 							 
 	double  t;               // системное время
 	int     mode;            // режим работы
@@ -1435,6 +1436,8 @@ if (!<b>fsnav->resume_plugin</b>(ins_get_gnss_data))
 		</li>
 		
 		<li><code>air</code> — <a href="#fsnav_air">система воздушных сигналов</a>;</li>
+		
+		<li><code>ref</code> — <a href="#fsnav_ref">данные идеальной траектории</a>.</li>
 	</ul>
 	</li>
 </ol>
