@@ -1,4 +1,4 @@
-// Nov-2020
+// Dec-2020
 // FSNAV core source code
 
 #include <stdlib.h>
@@ -2062,10 +2062,10 @@ void fsnav_linal_eul2mat(double* R, double* e)
 		c = (1 - cos(e0))/e02;
 	}
 	else {
-		// Taylor expansion for sin(x)/x, (1-cos(x))/x^2 up to 10-th degree terms 
+		// Taylor expansion for sin(x)/x, (1-cos(x))/x^2 up to 10-th degree terms (only even powers in each series)
 		// having the order of 2^-105, they fall below IEEE 754-2008 quad precision rounding error when multiplied by an argument less than 2^-8
 		s = 1, c = 1/2.;
-		for (i = 1, ps = -e02/6, pc = -e02/24; i < 5; i++, ps *= -e02/((double)(i*(4*i+2))), pc *= -e02/((double)((4*i+2)*(i+1))))
+		for (i = 2, ps = -e02/6, pc = -e02/24; i < 10 && ps != 0.0; i += 2, ps *= -e02/(i*(i+1.0)), pc *= -e02/((i+1.0)*(i+2.0)))
 			s += ps, c += pc;
 	}
 
