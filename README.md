@@ -1,6 +1,6 @@
 **Inertial Nav Proto code**
 
-Compile instaructions
+Compile instructions
 ```
 mkdir build
 cd build
