@@ -1,4 +1,4 @@
-// Dec-2020
+// Jan-2021
 /*	fsnav_ins_alignment 
 	
 	fsnav plugins for ins initial alignment (initial attitude matrix determination):

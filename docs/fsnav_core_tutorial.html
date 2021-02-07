@@ -222,7 +222,7 @@
 
 <body>
 <h1>Архитектура ПО БИНС</h1>
-<p style="font-weight: bold; text-align: center;">10-12-2020</p>
+<p style="font-weight: bold; text-align: center;">26-12-2020</p>
 
 
 
@@ -307,13 +307,17 @@
 		<li><a href="#fsnav_linal_eul2mat"><code class="long">fsnav_linal_eul2mat</code></a></li>
 		<li><a href="#fsnav_linal_u_ij2k"><code class="long">fsnav_linal_u_ij2k</code></a></li>
 		<li><a href="#fsnav_linal_u_k2ij"><code class="long">fsnav_linal_u_k2ij</code></a></li>
+		<li><a href="#fsnav_linal_diag2u"><code class="long">fsnav_linal_diag2u</code></a></li>
 		<li><a href="#fsnav_linal_u_mul"><code class="long">fsnav_linal_u_mul</code></a></li>
-		<li><a href="#fsnav_linal_uT_mul_v"><code class="long">fsnav_linal_uT_mul_v</code></a></li>
+		<li><a href="#fsnav_linal_uT_mul"><code class="long">fsnav_linal_uT_mul</code></a></li>
+		<li><a href="#fsnav_linal_mul_u"><code class="long">fsnav_linal_mul_u</code></a></li>
+		<li><a href="#fsnav_linal_msq2T_u"><code class="long">fsnav_linal_msq2T_u</code></a></li>
+		<li><a href="#fsnav_linal_msq1T_u"><code class="long">fsnav_linal_msq1T_u</code></a></li>
 		<li><a href="#fsnav_linal_u_inv"><code class="long">fsnav_linal_u_inv</code></a></li>
 		<li><a href="#fsnav_linal_uuT"><code class="long">fsnav_linal_uuT</code></a></li>
 		<li><a href="#fsnav_linal_chol"><code class="long">fsnav_linal_chol</code></a></li>
-		<li><a href="#fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update</code></a></li>
 		<li><a href="#fsnav_linal_check_measurement_residual"><code class="long">fsnav_linal_check_measurement_residual</code></a></li>
+		<li><a href="#fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update</code></a></li>
 	</ul>
 	</li>
 	
@@ -1804,16 +1808,16 @@ void fsnav_step_sync(void)
 
 
 
-<h3 id="fsnav_linal_dot"><code class="long">fsnav_linal_dot(u,v,m)</code> — вычисление скалярного произведения</h3>
+<h3 id="fsnav_linal_dot"><code class="long">fsnav_linal_dot(u,v,n)</code> — вычисление скалярного произведения</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* u</code> — указатель на массив длины <span class="formula">m</span>; первый вектор.</li> 
+	<li><code>double* u</code> — указатель на массив длины <span class="formula">n</span>; первый вектор.</li> 
 	
-	<li><code>double* v</code> — указатель на массив длины <span class="formula">m</span>; второй вектор.</li> 
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">n</span>; второй вектор.</li> 
 
-	<li><code>const size_t m</code> — размерность векторов.</li> 
+	<li><code>const size_t n</code> — размерность векторов.</li> 
 	
 </ol>
 
@@ -1829,14 +1833,14 @@ void fsnav_step_sync(void)
 
 
 
-<h3 id="fsnav_linal_vnorm"><code class="long">fsnav_linal_vnorm(u,m)</code> — вычисление &#8467;&#8322;-нормы вектора</h3>
+<h3 id="fsnav_linal_vnorm"><code class="long">fsnav_linal_vnorm(u,n)</code> — вычисление &#8467;&#8322;-нормы вектора</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* u</code> — указатель на массив длины <span class="formula">m</span>; вектор.</li> 
+	<li><code>double* u</code> — указатель на массив длины <span class="formula">n</span>; вектор.</li> 
 
-	<li><code>const size_t m</code> — размерность вектора.</li> 
+	<li><code>const size_t n</code> — размерность вектора.</li> 
 	
 </ol>
 
@@ -2189,20 +2193,20 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 
 
-<h3 id="fsnav_linal_u_ij2k"><code class="long">fsnav_linal_u_ij2k(&k,i,j,m)</code> — преобразование индексов для верхнетреугольной матрицы в одномерном массиве</h3>
+<h3 id="fsnav_linal_u_ij2k"><code class="long">fsnav_linal_u_ij2k(k,i,j,n)</code> — преобразование индексов для верхнетреугольной матрицы в одномерном массиве</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>const size_t i,j</code> — индекс строки <span class="formula">i = 0,1,..,m-1</span> и столбца <span class="formula">j = 0,1,..,m-1</span> в двухмерной матрице.</li>
+	<li><code>const size_t i,j</code> — индекс строки <span class="formula">i = 0,1,..,n-1</span> и столбца <span class="formula">j = 0,1,..,n-1</span> в двухмерной матрице.</li>
 
-	<li><code>const size_t m</code> — размер матрицы.</li>
+	<li><code>const size_t n</code> — размер матрицы.</li>
 	
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>size_t* k</code> — указатель на переменную; индекс <span class="formula">k = 0,1,..,[<sup>m(m+1)</sup>&frasl;<sub>2</sub>]-1</span> 
+<p><code>size_t* k</code> — указатель на переменную; индекс <span class="formula">k = 0,1,..,[<sup>n(n+1)</sup>&frasl;<sub>2</sub>]-1</span> 
 в одномерном массиве элементов верхнетреугольной матрицы, соответствующий строке с индексом <span class="formula">i</span> и столбцу с индексом <span class="formula">j</span>.</p> 
 
 <h4>Возвращаемое значение</h4>
@@ -2225,27 +2229,31 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 
 
-<h3 id="fsnav_linal_u_k2ij"><code class="long">fsnav_linal_u_k2ij(&i,&j,k,m)</code> — обратное преобразование индекса в одномерном массиве для верхнетреугольной матрицы</h3>
+<h3 id="fsnav_linal_u_k2ij"><code class="long">fsnav_linal_u_k2ij(i,j,k,n)</code> — обратное преобразование индекса в одномерном массиве для верхнетреугольной матрицы</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>const size_t k</code> — индекс <span class="formula">k = 0,1,..,[<sup>m(m+1)</sup>&frasl;<sub>2</sub>]&#8722;1</span> 
+	<li><code>const size_t k</code> — индекс <span class="formula">k = 0,1,..,[<sup>n(n+1)</sup>&frasl;<sub>2</sub>]&#8722;1</span> 
 	в одномерном массиве элементов верхнетреугольной матрицы.</li>
 
-	<li><code>const size_t m</code> — размер матрицы.</li>
+	<li><code>const size_t n</code> — размер матрицы.</li>
 	
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>size_t *i,*j</code> — указатели на переменные; 
-	индексы строки <span class="formula">i = 0,1,..,m-1</span> и столбца <span class="formula">j = 0,1,..,m-1</span> в двухмерной матрице, 
+<p><code>size_t* i,j</code> — указатели на переменные; 
+	индексы строки <span class="formula">i = 0,1,..,n-1</span> и столбца <span class="formula">j = 0,1,..,n-1</span> в двухмерной матрице, 
 	соответствующие индексу <span class="formula">k</span> в одномерном массиве.</p>
 
 <h4>Возвращаемое значение</h4>
 
 <p>Отсутствует.</p>
+
+<h4>Примечание</h4>
+
+<p>Допускается передача нулевого указателя в <code>i</code> или <code>j</code>.</p>
 
 <h4>Пример</h4>
 
@@ -2258,6 +2266,30 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 	<tr> <td>—    </td> <td>—    </td> <td>k = 5</td> </tr>
 </table>
 </div>
+
+
+
+
+
+<h3 id="fsnav_linal_diag2u"><code class="long">fsnav_linal_diag2u(u,d,n)</code> — заполнение диагонали матрицы значениями массива</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+
+	<li><code>double* d</code> — указатель на массив длины <span class="formula">n</span>; значения диагональных элементов.</li>
+
+	<li><code>const size_t n</code> — размер матрицы.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
 
 
 
@@ -2286,28 +2318,83 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 <h4>Примечания</h4>
 
-<p>Допускается совпадение указателей <code>res</code> и <code>v</code> для замены координат вектора на результат произведения.</p>
+<p>Допускается совпадение указателей <code>res</code> и <code>v</code> для замены исходной матрицы на результат произведения.</p>
 
 
 
 
 
-<h3 id="fsnav_linal_uT_mul_v"><code class="long">fsnav_linal_uT_mul_v(res,u,v,m)</code> — умножение транспонированной верхнетреугольной матрицы на вектор</h3>
+<h3 id="fsnav_linal_uT_mul"><code class="long">fsnav_linal_uT_mul(res,u,v,n,m)</code> — умножение транспонированной верхнетреугольной матрицы на матрицу</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
 
-	<li><code>double* v</code> — указатель на массив длины <span class="formula">m</span>; вектор.</li>
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">n&middot;m</span>; матрица.</li>
 	
-	<li><code>const size_t m</code> — размер вектора.</li>
+	<li><code>const size_t n,m</code> — соответствующие размеры матриц.</li>
 	
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>double* res</code> — указатель на массив длины <span class="formula">m</span>; произведение транспонированной матрицы на вектор <span class="formula">u<sup>T</sup>&middot;v</span>.</p> 
+<p><code>double* res</code> — указатель на массив длины <span class="formula">n&middot;m</span>; произведение транспонированной верхнетреугольной матрицы на матрицу <span class="formula">u<sup>T</sup>&middot;v</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Допускается совпадение указателей <code>res</code> и <code>v</code> для замены исходной матрицы на результат произведения.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_mul_u"><code class="long">fsnav_linal_mul_u(res,v,u,m,n)</code> — умножение матрицы на верхнетреугольную матрицу</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">m&middot;n</span>; матрица.</li>
+
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+	
+	<li><code>const size_t m,n</code> — соответствующие размеры матриц.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula">m&middot;n</span>; произведение матрицы на верхнетреугольную матрицу <span class="formula">v&middot;u</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+<h4>Примечания</h4>
+
+<p>Допускается совпадение указателей <code>res</code> и <code>v</code> для замены исходной матрицы на результат произведения.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_msq2T_u"><code class="long">fsnav_linal_msq2T_u(res,v,n,m)</code> — умножение матрицы на себя (вторая транспонирована)</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">n&middot;m</span>; матрица.</li>
+	
+	<li><code>const size_t n,m</code> — размеры матрицы.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричного произведения матрицы на транспонированную <span class="formula">v&middot;v<sup>T</sup></span>.</p> 
 
 <h4>Возвращаемое значение</h4>
 
@@ -2317,20 +2404,42 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 
 
-<h3 id="fsnav_linal_u_inv"><code class="long">fsnav_linal_u_inv(res,u,m)</code> — обращение невырожденной верхнетреугольной матрицы</h3>
+<h3 id="fsnav_linal_msq1T_u"><code class="long">fsnav_linal_msq1T_u(res,v,m,n)</code> — умножение матрицы на себя (первая транспонирована)</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; невырожденная верхнетреугольная матрица.</li>
+	<li><code>double* v</code> — указатель на массив длины <span class="formula">m&middot;n</span>; матрица.</li>
 	
-	<li><code>const size_t m</code> — размер матрицы.</li>
+	<li><code>const size_t m,n</code> — размеры матрицы.</li>
+</ol>
+
+<h4>Выход</h4>
+
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричного произведения транспонированной матрицы на матрицу <span class="formula">v<sup>T</sup>&middot;v</span>.</p> 
+
+<h4>Возвращаемое значение</h4>
+
+<p>Отсутствует.</p>
+
+
+
+
+
+<h3 id="fsnav_linal_u_inv"><code class="long">fsnav_linal_u_inv(res,u,n)</code> — обращение невырожденной верхнетреугольной матрицы</h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; невырожденная верхнетреугольная матрица.</li>
+	
+	<li><code>const size_t n</code> — размер матрицы.</li>
 	
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная обратная матрица <span class="formula">u<sup>-1</sup></span>.</p> 
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная обратная матрица <span class="formula">u<sup>-1</sup></span>.</p> 
 
 <h4>Возвращаемое значение</h4>
 
@@ -2344,20 +2453,19 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 
 
-<h3 id="fsnav_linal_uuT"><code class="long">fsnav_linal_uuT(res,u,m)</code> — квадрат верхнетреугольной матрицы с транспонированием</h3>
+<h3 id="fsnav_linal_uuT"><code class="long">fsnav_linal_uuT(res,u,n)</code> — квадрат верхнетреугольной матрицы с транспонированием</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
+	<li><code>double* u</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная матрица.</li>
 	
-	<li><code>const size_t m</code> — размер матрицы.</li>
-	
+	<li><code>const size_t n</code> — размер матрицы.</li>
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричного произведения матрицы на транспонированную <span class="formula">u&middot;u<sup>T</sup></span>.</p> 
+<p><code>double* res</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричного произведения матрицы на транспонированную <span class="formula">u&middot;u<sup>T</sup></span>.</p> 
 
 <h4>Возвращаемое значение</h4>
 
@@ -2374,20 +2482,23 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 </ol>
 
 
-<h3 id="fsnav_linal_chol"><code class="long">fsnav_linal_chol(S,P,m)</code> — вычисление верхнетреугольного <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">разложения Холецкого</a></h3>
+
+
+
+<h3 id="fsnav_linal_chol"><code class="long">fsnav_linal_chol(S,P,n)</code> — вычисление верхнетреугольного <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">разложения Холецкого</a></h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* P</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричной неотрицательно-определенной матрицы.</li>
+	<li><code>double* P</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольная часть симметричной неотрицательно-определенной матрицы.</li>
 	
-	<li><code>const size_t m</code> — размер матрицы.</li>
+	<li><code>const size_t n</code> — размер матрицы.</li>
 	
 </ol>
 
 <h4>Выход</h4>
 
-<p><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный множитель Холецкого такой, что <span class="formula">P = S&middot;S<sup>T</sup></span>.</p> 
+<p><code>double* S</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный множитель Холецкого такой, что <span class="formula">P = S&middot;S<sup>T</sup></span>.</p> 
 
 <h4>Возвращаемое значение</h4>
 
@@ -2401,19 +2512,61 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 
 
-<h3 id="fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update(x,S,K,z,h,sigma,m)</code> — скалярный <a href="https://en.wikipedia.org/wiki/Kalman_filter#Update" target="_blank">этап коррекции фильтра Калмана</a></h3>
+<h3 id="fsnav_linal_check_measurement_residual"><code class="long">fsnav_linal_check_measurement_residual(x,S,z,h,sigma,k_sigma,n)</code> — проверка отклонения измерения от модельного значения</h3>
 
 <h4>Вход</h4>
 
 <ol>
-	<li><code>double* x</code> — указатель на массив длины <span class="formula">m</span>; текущая (априорная) оценка вектора состояния.</li> 
+	<li><code>double* x</code> — указатель на массив длины <span class="formula">n</span>; текущая оценка вектора состояния.</li> 
 
-	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
+	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
 	матрицы ковариации ошибки текущей оценки.</li>
 	
 	<li><code>double z</code> — скалярное измерение.</li>
 	
-	<li><code>double *h</code> — указатель на массив длины <span class="formula">m</span>; строка коэффициентов модели декоррелированного скалярного измерения: <span class="formula">z = h&middot;x + r</span>.</li>
+	<li><code>double* h</code> — указатель на массив длины <span class="formula">m</span>; строка коэффициентов модели измерения: <span class="formula">z = h&middot;x + r</span>.</li>
+	
+	<li><code>double sigma</code> — априорное стандартное отклонение ошибки измерения: <span class="formula">&#963; = &#8730;M[r<sup>2</sup>]</span>.</li>
+	
+	<li><code>double k_sigma</code> — коэффициент доверительного интервала: 2 для <span class="formula">2-&#963;</span> (95%), 3 для <span class="formula">3-&#963;</span> (99.7%) и т.д.</li>
+	
+	<li><code>const size_t n</code> — размерность вектора состояния.</li>
+	
+</ol>
+
+<h4>Выход</h4>
+
+<p>Только возвращаемое значение.</p>
+
+<h4>Возвращаемое значение</h4>
+
+<ul>
+	<li>1 — если отклонение находится в пределах ожидаемого уровня, т.е.
+	<div class="formula">
+	|z - h&middot;x| &lt; k<sub>&#963;</sub>&middot;&#8730;[h&middot;S&middot;S<sup>T</sup>&middot;h<sup>T</sup> + &#963;<sup>2</sup>]
+	</div>
+	</li>
+	
+	<li>0 — в противном случае.</li>
+</ul>
+
+
+
+
+
+<h3 id="fsnav_linal_kalman_update"><code class="long">fsnav_linal_kalman_update(x,S,K,z,h,sigma,n)</code> — скалярный <a href="https://en.wikipedia.org/wiki/Kalman_filter#Update" target="_blank">этап коррекции фильтра Калмана</a></h3>
+
+<h4>Вход</h4>
+
+<ol>
+	<li><code>double* x</code> — указатель на массив длины <span class="formula">n</span>; текущая (априорная) оценка вектора состояния.</li> 
+
+	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>n(n+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
+	матрицы ковариации ошибки текущей оценки.</li>
+	
+	<li><code>double z</code> — скалярное измерение.</li>
+	
+	<li><code>double *h</code> — указатель на массив длины <span class="formula">n</span>; строка коэффициентов модели декоррелированного скалярного измерения: <span class="formula">z = h&middot;x + r</span>.</li>
 	
 	<li><code>double sigma</code> — априорное стандартное отклонение ошибки измерения: <span class="formula">&#963; = &#8730;M[r<sup>2</sup>]</span>.</li>
 	
@@ -2428,7 +2581,7 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 	<li><code>double* S</code> — верхнетреугольный множитель Холецкого апостериорной матрицы ковариации ошибки оценки.</li>
 	
-	<li><code>double* K</code> — массив размера <span class="formula">m</span>; коэффициенты фильтра.</li>
+	<li><code>double* K</code> — массив размера <span class="formula">n</span>; коэффициенты усиления фильтра.</li>
 	
 </ol>
 
@@ -2454,45 +2607,6 @@ R = E + [e&#770]·<sup>sin&#8214;e&#8214;</sup>&frasl;<sub>&#8214;e&#8214;</sub>
 
 </ol>
 
-
-
-<h3 id="fsnav_linal_check_measurement_residual"><code class="long">fsnav_linal_check_measurement_residual(x,S,z,h,sigma,k_sigma,m)</code> — проверка отклонения измерения от модельного значения</h3>
-
-<h4>Вход</h4>
-
-<ol>
-	<li><code>double* x</code> — указатель на массив длины <span class="formula">m</span>; текущая оценка вектора состояния.</li> 
-
-	<li><code>double* S</code> — указатель на массив длины <span class="formula"><sup>m(m+1)</sup>&frasl;<sub>2</sub></span>; верхнетреугольный <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition" target="_blank">множитель Холецкого</a> 
-	матрицы ковариации ошибки текущей оценки.</li>
-	
-	<li><code>double z</code> — скалярное измерение.</li>
-	
-	<li><code>double* h</code> — указатель на массив длины <span class="formula">m</span>; строка коэффициентов модели измерения: <span class="formula">z = h&middot;x + r</span>.</li>
-	
-	<li><code>double sigma</code> — априорное стандартное отклонение ошибки измерения: <span class="formula">&#963; = &#8730;M[r<sup>2</sup>]</span>.</li>
-	
-	<li><code>double k_sigma</code> — коэффициент доверительного интервала: 2 для <span class="formula">2-&#963;</span> (95%), 3 для <span class="formula">3-&#963;</span> (99.7%) и т.д.</li>
-	
-	<li><code>const size_t m</code> — размерность вектора состояния.</li>
-	
-</ol>
-
-<h4>Выход</h4>
-
-<p>Только возвращаемое значение.</p>
-
-<h4>Возвращаемое значение</h4>
-
-<ul>
-	<li>1 — если отклонение находится в пределах ожидаемого уровня, т.е.
-	<div class="formula">
-	|z - h&middot;x| &lt; k<sub>&#963;</sub>&middot;&#8730;[h&middot;S&middot;S<sup>T</sup>&middot;h<sup>T</sup> + &#963;<sup>2</sup>]
-	</div>
-	</li>
-	
-	<li>0 — в противном случае.</li>
-</ul>
 
 
 

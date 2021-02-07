@@ -1,4 +1,4 @@
-// Dec-2020
+// Jan-2021
 /*	fsnav_ins_alignment 
 	
 	fsnav plugins for ins initial alignment (initial attitude matrix determination):
@@ -636,10 +636,10 @@ void fsnav_ins_alignment_rotating_rpy(void) {
 		// renew quaternion
 		fsnav_linal_mat2quat(fsnav->imu->sol.q  , fsnav->imu->sol.L);
 		fsnav->imu->sol.q_valid   = 1;		
-		// instrumental frame update: Azz0(t+dt) = (E + [w x]*sin(|w*dt|)/|w| + [w x]^2*(1-cos(|w*dt|)/|?|^2)*Azz0(t) - Rodrigues' rotation formula
+		// instrumental frame update: Azz0(t+dt) = (E + [w x]*sin(|w*dt|)/|w| + [w x]^2*(1-cos(|w*dt|)/|w|^2)*Azz0(t) - Rodrigues' rotation formula
 		for (i = 0; i < 3; i++)
 			a[i] = fsnav->imu->w[i]*dt; // a = w*dt
-		fsnav_linal_eul2mat(C,a);       // � = E + [a x]*sin(|a|)/|a| + [a x]^2*(1-cos(|a|)/|a|^2
+		fsnav_linal_eul2mat(C,a);       // C = E + [a x]*sin(|a|)/|a| + [a x]^2*(1-cos(|a|)/|a|^2
 		for (i = 0; i < 3; i++) {      // matrix multiplication overwriting Azz0
 			for (j = 0; j < 3; j++)
 				a[j] = Azz0[j*3+i];    // i-th column of Azz0 previous value
