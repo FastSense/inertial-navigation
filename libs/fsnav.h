@@ -1,4 +1,4 @@
-// Dec-2020
+// Jan-2021
 // FSNAV core header file
 
 #ifndef FSNAV_H_
@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 // FSNAV core declarations
-#define FSNAV_BUS_VERSION 11 // current bus version
+#define FSNAV_BUS_VERSION 12 // current bus version
 
 
 
@@ -443,11 +443,11 @@ char fsnav_time_epoch2gps         (unsigned int* week, double* sec, fsnav_time_e
 
 // linear algebra functions
 	// conventional operations
-double fsnav_linal_dot     (double* u, double* v, const size_t m                                              ); // calculate dot product
-double fsnav_linal_vnorm   (double* u, const size_t m                                                         ); // calculate l_2 vector norm, i.e. sqrt(u^T*u)
+double fsnav_linal_dot     (double* u, double* v, const size_t n                                              ); // calculate dot product
+double fsnav_linal_vnorm   (double* u, const size_t n                                                         ); // calculate l_2 vector norm, i.e. sqrt(u^T*u)
 void   fsnav_linal_cross3x1(double* res, double* u, double* v                                                 ); // calculate cross product for 3x1 vectors
 void   fsnav_linal_mmul    (double* res, double* a, double* b, const size_t n, const size_t n1, const size_t m); // multiply two matrices:                        res = a*b,   where a is n x n1, b is n1 x m, res is n x m
-void   fsnav_linal_mmul1T  (double* res, double* a, double* b, const size_t n, const size_t m, const size_t n1); // multiply two matrices (first is transposed):  res = a^T*b, where a is n x m,  b is n x n1, res is m x n1
+void   fsnav_linal_mmul1T  (double* res, double* a, double* b, const size_t n, const size_t m, const size_t n1); // multiply two matrices ( first is transposed): res = a^T*b, where a is n x m,  b is n x n1, res is m x n1
 void   fsnav_linal_mmul2T  (double* res, double* a, double* b, const size_t n, const size_t m, const size_t n1); // multiply two matrices (second is transposed): res = a*b^T, where a is n x m,  b is n1 x m, res is n x n1
 void   fsnav_linal_qmul    (double* res, double* q, double* r                                                 ); // multiply 4x1 quaternions:                     res = q x r, with res0, q0, r0 being scalar parts
 	
@@ -458,28 +458,32 @@ void fsnav_linal_rpy2mat (double* R, double* rpy); // calculate 3x3 transition m
 void fsnav_linal_mat2rpy (double* rpy, double* R); // calculate roll, pitch and yaw (radians, airborne frame: X longitudinal, Z right-wing) corresponding to 3x3 transition matrix R from E-N-U
 void fsnav_linal_eul2mat (double* R, double* e  ); // calculate 3x3 rotation matrix R for 3x1 Euler vector e via Rodrigues' formula: R = E + sin|e|/|e|*[e,] + (1-cos|e|)/|e|^2*[e,]^2 
 	
-	// routines for m x m upper-triangular matrices U lined up in a single-dimension array u
-		// index conversion
-void fsnav_linal_u_ij2k(size_t* k, const size_t i, const size_t j, const size_t m); // convert index for upper-triangular matrix lined up in a single-dimension array: (i,j) ->  k
-void fsnav_linal_u_k2ij(size_t* i, size_t* j, const size_t k, const size_t m     ); // convert index for upper-triangular matrix lined up in a single-dimension array:  k    -> (i,j)
-		
+	// routines for n x n upper-triangular matrices U lined up in one-dimensional array u
+		// element manipulations
+void fsnav_linal_u_ij2k(size_t* k, const size_t i, const size_t j, const size_t n); // convert index for upper-triangular matrix lined up in one-dimensional array: (i,j) ->  k
+void fsnav_linal_u_k2ij(size_t* i, size_t* j, const size_t k,      const size_t n); // convert index for upper-triangular matrix lined up in one-dimensional array:  k    -> (i,j)
+void fsnav_linal_diag2u(double* u, double* d,                      const size_t n); // fill the diagonal with array elements
+
 		// conventional matrix operations
-void fsnav_linal_u_mul   (double* res, double* u, double* v, const size_t n, const size_t m); // multiply upper-triangular matrix lined up in a single-dimension array by a regular matrix:                             res = U*v
-void fsnav_linal_uT_mul_v(double* res, double* u, double* v, const size_t m                ); // multiply upper-triangular matrix lined up in a single-dimension array of m(m+1)/2 x 1 (transposed) by vector:          res = U^T*v
-void fsnav_linal_u_inv   (double* res, double* u, const size_t m                           ); // invert upper-triangular matrix lined up in a single-dimension array of m(m+1)/2 x 1:                                   res = U^-1
-void fsnav_linal_uuT     (double* res, double* u, const size_t m                           ); // calculate square (with transposition) of upper-triangular matrix lined up in a single-dimension array of m(m+1)/2 x 1: res = U*U^T
-	
+void fsnav_linal_u_mul  (double* res, double* u, double* v, const size_t n, const size_t m); // multiply upper-triangular matrix lined up in one-dimensional array of n(n+1)/2 x 1 by a regular matrix:             res = U*v
+void fsnav_linal_uT_mul (double* res, double* u, double* v, const size_t n, const size_t m); // multiply transposed upper-triangular matrix lined up in one-dimensional array of n(n+1)/2 x 1, by a regular matrix: res = U^T*v
+void fsnav_linal_mul_u  (double* res, double* v, double* u, const size_t m, const size_t n); // multiply a regular matrix by upper-triangular matrix lined up in one-dimensional array of n(n+1)/2 x 1:             res = v*U
+void fsnav_linal_msq2T_u(double* res, double* v,            const size_t n, const size_t m); // multiply a regular matrix by itself transposed, storing upper part of the result lined up in one-dimensional array: res = v*v^T
+void fsnav_linal_msq1T_u(double* res, double* v,            const size_t m, const size_t n); // multiply a transposed regular matrix by itself, storing upper part of the result lined up in one-dimensional array: res = v^T*v
+void fsnav_linal_u_inv  (double* res, double* u,                            const size_t n); // invert upper-triangular matrix lined up in one-dimensional array of n(n+1)/2 x 1:                                   res = U^-1
+void fsnav_linal_uuT    (double* res, double* u,                            const size_t n); // calculate square (with transposition) of upper-triangular matrix lined up in one-dimensional array of n(n+1)/2 x 1: res = U*U^T
+
 	// matrix factorizations
-void fsnav_linal_chol(double* S, double* P, const size_t m); // calculate Cholesky upper-triangular factorization P = S*S^T, where P is symmetric positive-definite matrix
+void fsnav_linal_chol(double* S, double* P, const size_t n); // calculate Cholesky upper-triangular factorization P = S*S^T, where P is symmetric positive-definite matrix
 
 	// square root Kalman filtering
 char   fsnav_linal_check_measurement_residual(double* x, double* S, double z, double* h, double sigma, double k_sigma, const size_t n); // check measurement residual magnitude against predicted covariance level
-double fsnav_linal_kalman_update             (double* x, double* S, double* K, double z, double* h, double sigma, const size_t n     ); // perform square root Kalman filter update     phase
-void   fsnav_linal_kalman_predict_I_qI       (double* S, double  q2, const size_t n                                                  ); // perform square root Kalman filter prediction phase: identity         state transition, scalar         process noise covariance
-void   fsnav_linal_kalman_predict_I_qIr      (double* S, double  q2, const size_t n, const size_t m                                  ); // perform square root Kalman filter prediction phase: identity         state transition, reduced scalar process noise covariance
-void   fsnav_linal_kalman_predict_I_diag     (double* S, double* q2, const size_t n, const size_t m                                  ); // perform square root Kalman filter prediction phase: identity         state transition, diagonal       process noise covariance
-void   fsnav_linal_kalman_predict_I          (double* S, double* Q, const size_t n, const size_t m                                   ); // perform square root Kalman filter prediction phase: identity         state transition
+double fsnav_linal_kalman_update             (double* x, double* S, double* K, double z, double* h, double sigma,      const size_t n); // perform square root Kalman filter update     phase
+void   fsnav_linal_kalman_predict_I_qI       (           double* S,            double  q2, const size_t n                            ); // perform square root Kalman filter prediction phase: identity         state transition, scalar         process noise covariance
+void   fsnav_linal_kalman_predict_I_qIr      (           double* S,            double  q2, const size_t n, const size_t m            ); // perform square root Kalman filter prediction phase: identity         state transition, reduced scalar process noise covariance
+void   fsnav_linal_kalman_predict_I_diag     (           double* S,            double* q2, const size_t n, const size_t m            ); // perform square root Kalman filter prediction phase: identity         state transition, diagonal       process noise covariance
+void   fsnav_linal_kalman_predict_I          (           double* S,            double* Q , const size_t n, const size_t m            ); // perform square root Kalman filter prediction phase: identity         state transition
 void   fsnav_linal_kalman_predict_U_diag     (double* x, double* S, double* U, double* q2, const size_t n, const size_t m            ); // perform square root Kalman filter prediction phase: upper triangular state transition, diagonal       process noise covariance
-void   fsnav_linal_kalman_predict_U          (double* x, double* S, double* U, double* Q, const size_t n, const size_t m             ); // perform square root Kalman filter prediction phase: upper triangular state transition
+void   fsnav_linal_kalman_predict_U          (double* x, double* S, double* U, double* Q , const size_t n, const size_t m            ); // perform square root Kalman filter prediction phase: upper triangular state transition
 
 #endif // FSNAV_H_
